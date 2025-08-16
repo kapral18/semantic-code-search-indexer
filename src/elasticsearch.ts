@@ -2,32 +2,77 @@ import { Client, helpers } from '@elastic/elasticsearch';
 import { Readable } from 'stream';
 import { elasticsearchConfig } from './config';
 
+const clientOptions = {
+  node: elasticsearchConfig.endpoint,
+  requestTimeout: 90000, // 90 seconds
+};
+
 let client: Client;
 
 if (elasticsearchConfig.apiKey) {
   client = new Client({
-    node: elasticsearchConfig.endpoint,
+    ...clientOptions,
     auth: {
       apiKey: elasticsearchConfig.apiKey,
     },
   });
 } else if (elasticsearchConfig.username && elasticsearchConfig.password) {
   client = new Client({
-    node: elasticsearchConfig.endpoint,
+    ...clientOptions,
     auth: {
       username: elasticsearchConfig.username,
       password: elasticsearchConfig.password,
     },
   });
 } else {
-  client = new Client({ node: elasticsearchConfig.endpoint });
+  client = new Client(clientOptions);
 }
 
 const indexName = 'code-chunks';
+const elserPipelineName = 'elser_ingest_pipeline_2';
+const elserModelId = '.elser_model_2';
 
-/**
- * Creates the Elasticsearch index with the correct mapping for code chunks.
- */
+export async function setupElser(): Promise<void> {
+  console.log('Checking for ELSER model and pipeline...');
+  const pipelineExists = await client.ingest.getPipeline({ id: elserPipelineName }).catch(() => false);
+  if (pipelineExists) {
+    console.log('ELSER ingest pipeline already exists.');
+    return;
+  }
+  try {
+    await client.ml.getTrainedModels({ model_id: elserModelId });
+  } catch (error) {
+    console.error(`ELSER model '${elserModelId}' not found on the cluster.`);
+    console.error('Please download it via the Kibana UI (Machine Learning > Trained Models) before running the indexer.');
+    throw new Error('ELSER model not found.');
+  }
+  const stats = await client.ml.getTrainedModelsStats({ model_id: elserModelId });
+  if (stats.trained_model_stats[0]?.deployment_stats?.state !== 'started') {
+    console.log('Starting ELSER model deployment...');
+    await client.ml.startTrainedModelDeployment({ model_id: elserModelId, wait_for: 'started' });
+  }
+  console.log('ELSER model is deployed.');
+  console.log(`Creating ELSER ingest pipeline: ${elserPipelineName}...`);
+  await client.ingest.putPipeline({
+    id: elserPipelineName,
+    description: 'Ingest pipeline for ELSER on code chunks',
+    processors: [
+      {
+        inference: {
+          model_id: elserModelId,
+          input_output: [
+            {
+              input_field: 'content',
+              output_field: 'content_embedding',
+            },
+          ],
+        },
+      },
+    ],
+  });
+  console.log('ELSER setup complete.');
+}
+
 export async function createIndex(): Promise<void> {
   const indexExists = await client.indices.exists({ index: indexName });
   if (!indexExists) {
@@ -40,10 +85,7 @@ export async function createIndex(): Promise<void> {
           startLine: { type: 'integer' },
           endLine: { type: 'integer' },
           content: { type: 'text' },
-          embedding: {
-            type: 'dense_vector',
-            dims: 768, // Must match the dimension of the embeddings
-          },
+          content_embedding: { type: 'sparse_vector' },
         },
       },
     });
@@ -57,64 +99,51 @@ export interface CodeChunk {
   startLine: number;
   endLine: number;
   content: string;
-  embedding: number[];
 }
 
 /**
- * Indexes a stream of code chunks into Elasticsearch using the high-level bulk helper.
- * @param datasource A Readable stream of code chunks to index.
+ * Indexes an array of code chunks into Elasticsearch using the high-level bulk helper.
  */
-export async function indexCodeChunks(datasource: Readable): Promise<void> {
-  let processedCount = 0;
-  const bulkHelper: helpers.BulkHelper<CodeChunk> = client.helpers.bulk({
-    datasource,
-    flushBytes: 1e6, // 1 MB
-    flushInterval: 5000, // 5 seconds
+export async function indexCodeChunks(chunks: CodeChunk[]): Promise<void> {
+  if (chunks.length === 0) {
+    return;
+  }
+
+  const bulkHelper = client.helpers.bulk({
+    datasource: chunks,
+    pipeline: elserPipelineName,
     onDocument(doc) {
-      processedCount++;
-      if (processedCount % 100 === 0) {
-        console.log(`[ES Consumer] Prepared ${processedCount} documents for indexing...`);
-      }
       return { index: { _index: indexName } };
     },
     onDrop(doc) {
-      console.error('[ES Consumer] Document dropped during bulk indexing:', doc);
+      console.error('[ES Consumer] Document dropped:', doc);
     },
   });
 
-  console.log('[ES Consumer] Bulk indexing started, waiting for data from the stream...');
-  const stats = await bulkHelper;
-  console.log('[ES Consumer] Bulk indexing complete.', stats);
+  await bulkHelper;
 }
 
-/**
- * Searches for code chunks that are semantically similar to the query.
- * @param queryEmbedding The vector embedding of the search query.
- * @returns A list of search results.
- */
-export async function searchCodeChunks(queryEmbedding: number[]): Promise<any[]> {
+export async function getClusterHealth(): Promise<any> {
+  return client.cluster.health();
+}
+
+export async function searchCodeChunks(query: string): Promise<any[]> {
   const response = await client.search({
     index: indexName,
-    knn: {
-      field: 'embedding',
-      query_vector: queryEmbedding,
-      k: 10,
-      num_candidates: 100,
+    query: {
+      sparse_vector: {
+        field: 'content_embedding',
+        inference_id: elserModelId,
+        query: query,
+      },
     },
-    _source: {
-      excludes: ['embedding'],
-    },
-  });
-
+  } as any);
   return response.hits.hits.map((hit: any) => ({
     ...hit._source,
     score: hit._score,
   }));
 }
 
-/**
- * Deletes the Elasticsearch index if it exists.
- */
 export async function deleteIndex(): Promise<void> {
   const indexExists = await client.indices.exists({ index: indexName });
   if (indexExists) {
@@ -123,4 +152,12 @@ export async function deleteIndex(): Promise<void> {
   } else {
     console.log(`Index "${indexName}" does not exist, skipping deletion.`);
   }
+}
+
+export async function deleteDocumentsByFilePath(filePath: string): Promise<void> {
+  await client.deleteByQuery({
+    index: indexName,
+    q: `filePath:"${filePath}"`,
+    refresh: true,
+  });
 }

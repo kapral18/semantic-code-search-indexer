@@ -1,108 +1,106 @@
 import './config'; // Must be the first import
 import { glob } from 'glob';
-import { createIndex, indexCodeChunks, searchCodeChunks, deleteIndex, CodeChunk } from './elasticsearch';
+import { createIndex, indexCodeChunks, searchCodeChunks, deleteIndex, CodeChunk, setupElser, getClusterHealth, deleteDocumentsByFilePath } from './elasticsearch';
 import { LanguageServerService } from './language_server';
 import path from 'path';
 import { findProjectRoot } from './utils';
 import os from 'os';
-import { Readable } from 'stream';
 import { Worker } from 'worker_threads';
-import { initializeEmbeddingModel, generateEmbedding } from './embedding'; // For search
+import cliProgress from 'cli-progress';
+import PQueue from 'p-queue';
 
 async function index(directory: string, clean: boolean) {
   if (clean) {
     await deleteIndex();
   }
 
+  await setupElser();
   console.log(`Indexing directory: ${directory}`);
   await createIndex();
 
   const files = await glob('**/*.{ts,tsx,js,jsx}', {
     cwd: directory,
-    ignore: 'node_modules/**',
+    ignore: ['node_modules/**', '**/*_lexer.ts', '**/*_parser.ts'],
     absolute: true,
   });
 
   console.log(`Found ${files.length} files to index.`);
 
-  // --- WORKER THREADS ARCHITECTURE WITH BACKPRESSURE ---
+  // Create a multibar container
+  const multibar = new cliProgress.MultiBar({
+    clearOnComplete: false,
+    hideCursor: true,
+    format: '{bar} | {percentage}% | {value}/{total} | {task}',
+  }, cliProgress.Presets.shades_classic);
 
-  const chunkStream = new Readable({
-    objectMode: true,
-    read() {},
-  });
+  const processingBar = multibar.create(files.length, 0, { task: 'Processing files' });
+  // We'll create the indexing bar later, when we know the total.
 
-  const consumerPromise = indexCodeChunks(chunkStream);
+  const BATCH_SIZE = 500;
+  const chunkQueue: CodeChunk[] = [];
+  const queue = new PQueue({ concurrency: os.cpus().length });
 
-  const producerPromise = new Promise<void>((resolve, reject) => {
-    const numWorkers = os.cpus().length;
-    const fileQueue = [...files];
-    let activeWorkers = 0;
-    let pausedWorkers: Worker[] = [];
+  let successCount = 0;
+  let failureCount = 0;
 
-    console.log(`Starting ${numWorkers} worker threads...`);
-
-    const processNextFile = (worker: Worker) => {
-      const file = fileQueue.pop();
-      if (file) {
-        worker.postMessage(file);
-      } else {
-        worker.terminate();
-        activeWorkers--;
-        if (activeWorkers === 0) {
-          chunkStream.push(null);
-          resolve();
-        }
-      }
-    };
-
-    const resumePausedWorkers = () => {
-      while (pausedWorkers.length > 0) {
-        const worker = pausedWorkers.pop();
-        if (worker) {
-          processNextFile(worker);
-        }
-      }
-    };
-
-    chunkStream.on('drain', resumePausedWorkers);
-
-    for (let i = 0; i < numWorkers; i++) {
+  const processFileWithWorker = (file: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
       const worker = new Worker(path.join(process.cwd(), 'dist', 'worker.js'));
       worker.on('message', (message) => {
-        if (message === 'ready') {
-          activeWorkers++;
-          processNextFile(worker);
-        } else if (message.status === 'done') {
-          const canContinue = message.data.every((chunk: CodeChunk) => chunkStream.push(chunk));
-          if (canContinue) {
-            processNextFile(worker);
-          } else {
-            pausedWorkers.push(worker);
-          }
-        } else if (message.status === 'error') {
-          console.error(`Error from worker:`, message.error);
-          processNextFile(worker);
+        processingBar.increment();
+        if (message.status === 'success') {
+          successCount++;
+          chunkQueue.push(...message.data);
+        } else if (message.status === 'failure') {
+          failureCount++;
         }
+        worker.terminate();
+        resolve();
       });
-      worker.on('error', reject);
-      worker.on('exit', (code) => {
-        if (code !== 0) console.error(`Worker stopped with exit code ${code}`);
+      worker.on('error', (err) => {
+        failureCount++;
+        processingBar.increment();
+        worker.terminate();
+        reject(err);
       });
+      worker.postMessage(file);
+    });
+  };
+
+  // Producer Promise
+  const producerPromise = (async () => {
+    files.forEach(file => queue.add(() => processFileWithWorker(file)));
+    await queue.onIdle();
+  })();
+
+  // Consumer Promise
+  const consumerPromise = (async () => {
+    await producerPromise; // Wait for the producer to finish
+
+    const indexingBar = multibar.create(chunkQueue.length, 0, { task: 'Indexing chunks ' });
+    
+    while (chunkQueue.length > 0) {
+      const batch = chunkQueue.splice(0, BATCH_SIZE);
+      await indexCodeChunks(batch);
+      indexingBar.increment(batch.length);
     }
-  });
+  })();
 
   await Promise.all([producerPromise, consumerPromise]);
+  multibar.stop();
 
+  console.log('\n---');
+  console.log('Indexing Summary:');
+  console.log(`  Successfully processed: ${successCount} files`);
+  console.log(`  Failed to parse:      ${failureCount} files`);
+  console.log('---');
   console.log('Indexing complete.');
 }
 
 // ... (search, references, and main functions remain the same) ...
 async function search(query: string) {
-  await initializeEmbeddingModel();
   console.log(`Searching for: "${query}"`);
-  const queryEmbedding = await generateEmbedding(query);
-  const results = await searchCodeChunks(queryEmbedding);
+  const results = await searchCodeChunks(query);
 
   console.log('Search results:');
   if (results.length === 0) {
