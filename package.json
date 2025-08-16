@@ -1,0 +1,40 @@
+{
+  "name": "code-indexer",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "index": "ts-node src/index.ts index",
+    "postindex": "npm run search --",
+    "search": "ts-node src/index.ts search",
+    "references": "ts-node src/index.ts references",
+    "index-and-search": "npm run index"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@elastic/elasticsearch": "^9.1.1",
+    "@xenova/transformers": "^2.17.2",
+    "dotenv": "^17.2.1",
+    "glob": "^11.0.3",
+    "p-queue": "^8.1.0",
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-javascript": "^0.23.1",
+    "tree-sitter-typescript": "^0.23.2",
+    "vscode-languageserver-protocol": "^3.17.5"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "eslint": "^9.33.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
