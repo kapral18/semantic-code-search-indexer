@@ -1,6 +1,5 @@
-import { Client, helpers } from '@elastic/elasticsearch';
-import { Readable } from 'stream';
-import { elasticsearchConfig } from './config';
+import { Client } from '@elastic/elasticsearch';
+import { elasticsearchConfig } from '../config';
 
 const clientOptions = {
   node: elasticsearchConfig.endpoint,

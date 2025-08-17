@@ -1,0 +1,35 @@
+
+import { LanguageServerService, findProjectRoot } from '../utils';
+import path from 'path';
+
+export async function references(filePath: string, line: number, character: number) {
+  const absoluteFilePath = path.resolve(filePath);
+  const projectRoot = findProjectRoot(absoluteFilePath);
+
+  if (!projectRoot) {
+    console.error(`Could not find a tsconfig.json for the file: ${filePath}`);
+    process.exit(1);
+  }
+
+  const languageServer = new LanguageServerService();
+
+  console.log(`Found project root: ${projectRoot}`);
+  console.log('Initializing language server...');
+  await languageServer.initialize(projectRoot);
+  console.log('Language server initialized.');
+
+  console.log(`Finding references for ${absoluteFilePath}:${line}:${character}`);
+  const results = await languageServer.findAllReferences(absoluteFilePath, line, character);
+
+  if (results && results.length > 0) {
+    console.log('Found references:');
+    results.forEach(result => {
+      const resultPath = result.uri.replace(`file://${projectRoot}/`, '');
+      console.log(`  - ${resultPath}:${result.range.start.line}:${result.range.start.character}`);
+    });
+  } else {
+    console.log('No results found.');
+  }
+
+  languageServer.dispose();
+}
