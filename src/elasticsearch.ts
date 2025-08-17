@@ -30,7 +30,7 @@ if (elasticsearchConfig.apiKey) {
 
 const indexName = 'code-chunks';
 const elserPipelineName = 'elser_ingest_pipeline_2';
-const elserModelId = '.elser_model_2';
+const elserModelId = elasticsearchConfig.model;
 
 export async function setupElser(): Promise<void> {
   console.log('Checking for ELSER model and pipeline...');
