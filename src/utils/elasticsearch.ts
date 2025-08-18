@@ -88,6 +88,8 @@ export async function createIndex(): Promise<void> {
           endLine: { type: 'integer' },
           content: { type: 'text' },
           content_embedding: { type: 'sparse_vector' },
+          created_at: { type: 'date' },
+          updated_at: { type: 'date' },
         },
       },
     });
@@ -104,6 +106,8 @@ export interface CodeChunk {
   startLine: number;
   endLine: number;
   content: string;
+  created_at: string;
+  updated_at: string;
 }
 
 /**

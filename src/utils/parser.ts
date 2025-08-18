@@ -16,6 +16,8 @@ interface CodeChunk {
   startLine: number;
   endLine: number;
   content: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const parsers: { [key: string]: any } = {
@@ -94,6 +96,7 @@ export function parseFile(filePath: string, gitBranch: string, relativePath: str
   const query = new Query(language, queryString);
   const matches = query.matches(tree.rootNode);
   const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
+  const now = new Date().toISOString();
 
   return matches.map(({ captures }) => {
     const node = captures[0].node;
@@ -107,6 +110,8 @@ export function parseFile(filePath: string, gitBranch: string, relativePath: str
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
       content: content,
+      created_at: now,
+      updated_at: now,
     };
   });
 }
