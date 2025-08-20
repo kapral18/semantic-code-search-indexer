@@ -1,6 +1,6 @@
 
 import './config'; // Must be the first import
-import { index, search, references, incrementalIndex } from './commands';
+import { index, search, references, incrementalIndex, setup } from './commands';
 
 async function main() {
   const command = process.argv[2];
@@ -26,8 +26,15 @@ async function main() {
     }
     const [filePath, line, character] = argument.split(':');
     await references(filePath, parseInt(line, 10), parseInt(character, 10));
+  } else if (command === 'setup') {
+    if (!argument) {
+      console.error('Please provide a repository URL.');
+      process.exit(1);
+    }
+    await setup(argument);
   } else {
     console.log('Usage:');
+    console.log('  npm run setup <repo_url>                   - Clones a repository to be indexed');
     console.log('  npm run index [directory] [--clean]        - Index a directory, optionally deleting the old index first');
     console.log('  npm run incremental-index [directory]      - Incrementally index a directory');
     console.log('  npm run search <query>                     - Search for code');

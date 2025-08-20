@@ -11,6 +11,7 @@
     "search": "ts-node src/index.ts search",
     "references": "ts-node src/index.ts references",
     "incremental-index": "ts-node src/index.ts incremental-index",
+    "setup": "ts-node src/index.ts setup",
     "index-and-search": "npm run index"
   },
   "keywords": [],
