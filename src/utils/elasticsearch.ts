@@ -80,6 +80,11 @@ export async function createIndex(): Promise<void> {
       index: indexName,
       mappings: {
         properties: {
+          type: { type: 'keyword' },
+          language: { type: 'keyword' },
+          kind: { type: 'keyword' },
+          imports: { type: 'keyword' },
+          containerPath: { type: 'text' },
           filePath: { type: 'keyword' },
           git_file_hash: { type: 'keyword' },
           git_branch: { type: 'keyword' },
@@ -149,6 +154,11 @@ export async function updateLastIndexedCommit(branch: string, commitHash: string
 }
 
 export interface CodeChunk {
+  type: 'code' | 'doc';
+  language: string;
+  kind?: string;
+  imports?: string[];
+  containerPath?: string;
   filePath: string;
   git_file_hash: string;
   git_branch: string;

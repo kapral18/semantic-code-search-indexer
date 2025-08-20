@@ -10,8 +10,8 @@ import {
   updateLastIndexedCommit,
   SUPPORTED_FILE_EXTENSIONS,
 } from '../utils';
+import { indexingConfig } from '../config';
 import path from 'path';
-import os from 'os';
 import { Worker } from 'worker_threads';
 import cliProgress from 'cli-progress';
 import PQueue from 'p-queue';
@@ -36,13 +36,15 @@ export async function index(directory: string, clean: boolean) {
   if (fs.existsSync(gitignorePath)) {
     ig.add(fs.readFileSync(gitignorePath, 'utf8'));
   }
-  ig.add(['node_modules/**', '**/*_lexer.ts', '**/*_parser.ts']);
+  ig.add(['**/*_lexer.ts', '**/*_parser.ts']);
 
-  const files = await glob(`**/*{${SUPPORTED_FILE_EXTENSIONS.join(',')}}`, {
-    cwd: directory,
-    ignore: ig,
-    absolute: true,
+  const relativeSearchDir = path.relative(gitRoot, directory);
+  const globPattern = path.join(relativeSearchDir, `**/*{${SUPPORTED_FILE_EXTENSIONS.join(',')}}`);
+
+  const allFiles = await glob(globPattern, {
+    cwd: gitRoot,
   });
+  const files = ig.filter(allFiles);
 
   console.log(`Found ${files.length} files to index.`);
 
@@ -56,13 +58,13 @@ export async function index(directory: string, clean: boolean) {
   const processingBar = multibar.create(files.length, 0, { task: 'Processing files' });
   // We'll create the indexing bar later, when we know the total.
 
-  const BATCH_SIZE = 500;
-  const MAX_QUEUE_SIZE = BATCH_SIZE * 3; // 3 batches
+  const { batchSize, maxQueueSize, cpuCores } = indexingConfig;
   const chunkQueue: CodeChunk[] = [];
-  const queue = new PQueue({ concurrency: Math.max(1, Math.floor(os.cpus().length / 2)) });
+  const queue = new PQueue({ concurrency: cpuCores });
 
   let successCount = 0;
   let failureCount = 0;
+  let totalChunksQueued = 0;
   const gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: directory }).toString().trim();
   let isProducerDone = false;
 
@@ -74,6 +76,7 @@ export async function index(directory: string, clean: boolean) {
         if (message.status === 'success') {
           successCount++;
           chunkQueue.push(...message.data);
+          totalChunksQueued += message.data.length;
         } else if (message.status === 'failure') {
           failureCount++;
         }
@@ -95,10 +98,11 @@ export async function index(directory: string, clean: boolean) {
   const producer = async () => {
     for (const file of files) {
       // Pause if the queue is full
-      while (chunkQueue.length > MAX_QUEUE_SIZE) {
+      while (chunkQueue.length > maxQueueSize) {
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100ms
       }
-      queue.add(() => processFileWithWorker(file));
+      const absolutePath = path.resolve(gitRoot, file);
+      queue.add(() => processFileWithWorker(absolutePath));
     }
     await queue.onIdle();
     isProducerDone = true;
@@ -106,15 +110,16 @@ export async function index(directory: string, clean: boolean) {
 
   // Consumer: Index chunks from the queue
   const consumer = async () => {
-    const indexingBar = multibar.create(files.length, 0, { task: 'Indexing chunks ' });
-    
+    const indexingBar = multibar.create(0, 0, { task: 'Indexing chunks ' });
+
     while (!isProducerDone || chunkQueue.length > 0) {
+      indexingBar.setTotal(totalChunksQueued);
       if (chunkQueue.length === 0) {
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait for more chunks
         continue;
       }
-      
-      const batch = chunkQueue.splice(0, BATCH_SIZE);
+
+      const batch = chunkQueue.splice(0, batchSize);
       await indexCodeChunks(batch);
       indexingBar.increment(batch.length);
     }

@@ -7,7 +7,7 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "index": "ts-node src/index.ts index",
+    "index": "NODE_OPTIONS=--max-old-space-size=8192 ts-node src/index.ts index",
     "search": "ts-node src/index.ts search",
     "references": "ts-node src/index.ts references",
     "incremental-index": "ts-node src/index.ts incremental-index",

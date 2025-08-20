@@ -8,8 +8,8 @@ import {
   deleteDocumentsByFilePath,
   SUPPORTED_FILE_EXTENSIONS,
 } from '../utils';
+import { indexingConfig } from '../config';
 import path from 'path';
-import os from 'os';
 import { Worker } from 'worker_threads';
 import cliProgress from 'cli-progress';
 import PQueue from 'p-queue';
@@ -77,9 +77,9 @@ export async function incrementalIndex(directory: string) {
     task: 'Processing files',
   });
 
-  const BATCH_SIZE = 500;
+  const { batchSize, cpuCores } = indexingConfig;
   const chunkQueue: CodeChunk[] = [];
-  const queue = new PQueue({ concurrency: os.cpus().length });
+  const queue = new PQueue({ concurrency: cpuCores });
 
   let successCount = 0;
   let failureCount = 0;
@@ -120,11 +120,12 @@ export async function incrementalIndex(directory: string) {
     const indexingBar = multibar.create(chunkQueue.length, 0, { task: 'Indexing chunks ' });
 
     while (chunkQueue.length > 0) {
-      const batch = chunkQueue.splice(0, BATCH_SIZE);
+      const batch = chunkQueue.splice(0, batchSize);
       await indexCodeChunks(batch);
       indexingBar.increment(batch.length);
     }
   })();
+
 
   await Promise.all([producerPromise, consumerPromise]);
   multibar.stop();

@@ -6,6 +6,7 @@ export const parsers: { [key: string]: any } = {
   '.tsx': TypeScript.tsx,
   '.js': JavaScript,
   '.jsx': JavaScript,
+  '.md': null,
 };
 
 export const SUPPORTED_FILE_EXTENSIONS = Object.keys(parsers);

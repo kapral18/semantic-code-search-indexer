@@ -4,20 +4,9 @@ import path from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import { parsers } from './constants';
+import { CodeChunk } from './elasticsearch';
 
 const { Query } = Parser;
-
-interface CodeChunk {
-  filePath: string;
-  git_file_hash: string;
-  git_branch: string;
-  chunk_hash: string;
-  startLine: number;
-  endLine: number;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
 
 function getParser(fileExt: string): any | undefined {
   return parsers[fileExt];
@@ -65,13 +54,55 @@ function getQuery(fileExt: string): string | undefined {
   return queries[fileExt];
 }
 
-/**
- * Parses a source code file and extracts code chunks.
- * @param filePath The path to the file to parse.
- * @returns An array of code chunks.
- */
+function getLanguage(fileExt: string): string {
+    switch (fileExt) {
+        case '.ts':
+        case '.tsx':
+            return 'typescript';
+        case '.js':
+        case '.jsx':
+            return 'javascript';
+        case '.md':
+            return 'markdown';
+        default:
+            return 'unknown';
+    }
+}
+
+function parseMarkdown(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
+    const now = new Date().toISOString();
+    const content = fs.readFileSync(filePath, 'utf8');
+    const chunks = content.split(/\n\s*\n/); // Split by paragraphs
+    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
+
+    return chunks.map((chunk, index) => {
+        const startLine = (content.substring(0, content.indexOf(chunk)).match(/\n/g) || []).length + 1;
+        const endLine = startLine + (chunk.match(/\n/g) || []).length;
+        const chunkHash = createHash('sha256').update(chunk).digest('hex');
+        return {
+            type: 'doc',
+            language: 'markdown',
+            filePath: relativePath,
+            git_file_hash: gitFileHash,
+            git_branch: gitBranch,
+            chunk_hash: chunkHash,
+            content: chunk,
+            startLine,
+            endLine,
+            created_at: now,
+            updated_at: now,
+        };
+    });
+}
+
 export function parseFile(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
   const fileExt = path.extname(filePath);
+  const now = new Date().toISOString();
+
+  if (fileExt === '.md') {
+      return parseMarkdown(filePath, gitBranch, relativePath);
+  }
+
   const language = getParser(fileExt);
   const queryString = getQuery(fileExt);
 
@@ -88,13 +119,36 @@ export function parseFile(filePath: string, gitBranch: string, relativePath: str
   const query = new Query(language, queryString);
   const matches = query.matches(tree.rootNode);
   const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
-  const now = new Date().toISOString();
+
+  const importNodes = matches.filter(
+    m => m.captures.some(c => c.name === 'import')
+  );
+  const imports = importNodes.map(m => m.captures[0].node.text);
 
   return matches.map(({ captures }) => {
     const node = captures[0].node;
     const content = node.text;
     const chunkHash = createHash('sha256').update(content).digest('hex');
+
+    let containerPath = '';
+    let parent = node.parent;
+    while (parent) {
+      if (parent.type === 'function_declaration' || parent.type === 'class_declaration' || parent.type === 'method_definition') {
+        const nameNode = parent.namedChildren.find(child => child.type === 'identifier');
+        if (nameNode) {
+          containerPath = `${nameNode.text} > ${containerPath}`;
+        }
+      }
+      parent = parent.parent;
+    }
+    containerPath = containerPath.replace(/ > $/, '');
+
     return {
+      type: 'code',
+      language: getLanguage(fileExt),
+      kind: node.type,
+      imports,
+      containerPath,
       filePath: relativePath,
       git_file_hash: gitFileHash,
       git_branch: gitBranch,
