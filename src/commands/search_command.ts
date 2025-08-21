@@ -1,5 +1,5 @@
 
-import { searchCodeChunks } from '../utils';
+import { searchCodeChunks } from '../utils/elasticsearch';
 
 export async function search(query: string) {
   console.log(`Searching for: "${query}"`);

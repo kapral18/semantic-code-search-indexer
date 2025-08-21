@@ -19,7 +19,13 @@ export async function setup(repoUrl: string) {
   const repoPath = path.join(reposDir, repoName);
 
   if (fs.existsSync(repoPath)) {
-    console.log(`Repository ${repoName} already exists. Skipping clone.`);
+    console.log(`Repository ${repoName} already exists. Pulling latest changes...`);
+    try {
+      execSync(`git pull`, { cwd: repoPath, stdio: 'inherit' });
+      console.log('Repository updated successfully.');
+    } catch (error) {
+      console.error(`Error pulling repository: ${error}`);
+    }
     return;
   }
 

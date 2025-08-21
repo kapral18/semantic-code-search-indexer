@@ -8,8 +8,8 @@ import {
   setupElser,
   createSettingsIndex,
   updateLastIndexedCommit,
-  SUPPORTED_FILE_EXTENSIONS,
-} from '../utils';
+} from '../utils/elasticsearch';
+import { SUPPORTED_FILE_EXTENSIONS } from '../utils/constants';
 import { indexingConfig } from '../config';
 import path from 'path';
 import { Worker } from 'worker_threads';

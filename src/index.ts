@@ -7,12 +7,13 @@ async function main() {
   const args = process.argv.slice(3);
 
   const clean = args.includes('--clean');
-  const argument = args.filter(arg => arg !== '--clean').join(' ');
+  const logMode = args.includes('--log-mode');
+  const argument = args.filter(arg => arg !== '--clean' && arg !== '--log-mode').join(' ');
 
   if (command === 'index') {
     await index(argument || '.', clean);
   } else if (command === 'incremental-index') {
-    await incrementalIndex(argument || '.');
+    await incrementalIndex(argument || '.', { logMode });
   } else if (command === 'search') {
     if (!argument) {
       console.error('Please provide a search query.');
@@ -36,7 +37,9 @@ async function main() {
     console.log('Usage:');
     console.log('  npm run setup <repo_url>                   - Clones a repository to be indexed');
     console.log('  npm run index [directory] [--clean]        - Index a directory, optionally deleting the old index first');
-    console.log('  npm run incremental-index [directory]      - Incrementally index a directory');
+    console.log(
+      '  npm run incremental-index [directory] [--log-mode] - Incrementally index a directory'
+    );
     console.log('  npm run search <query>                     - Search for code');
     console.log('  npm run references <path:line:char>        - Find all references for a symbol');
   }

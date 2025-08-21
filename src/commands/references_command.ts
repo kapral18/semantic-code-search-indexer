@@ -1,5 +1,6 @@
 
-import { LanguageServerService, findProjectRoot } from '../utils';
+import { LanguageServerService } from '../utils/language_server';
+import { findProjectRoot } from '../utils/find_project_root';
 import path from 'path';
 
 export async function references(filePath: string, line: number, character: number) {
