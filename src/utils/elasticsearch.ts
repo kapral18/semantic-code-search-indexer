@@ -34,7 +34,7 @@ if (elasticsearchConfig.cloudId) {
   client = new Client(clientOptions);
 } else {
   throw new Error(
-    'Elasticsearch connection not configured. Please set ELASTICSEARCH_CLOUD_ID or ELASTICSEARCH_URL.'
+    'Elasticsearch connection not configured. Please set ELASTICSEARCH_CLOUD_ID or ELASTICSEARCH_ENDPOINT.'
   );
 }
 

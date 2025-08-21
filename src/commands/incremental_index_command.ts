@@ -81,100 +81,74 @@ export async function incrementalIndex(
   }
 
   // Process additions/modifications
-  let multibar: cliProgress.MultiBar | undefined;
-  let processingBar: cliProgress.SingleBar | undefined;
   if (!logMode) {
-    multibar = new cliProgress.MultiBar(
-      {
-        clearOnComplete: false,
-        hideCursor: true,
-        format: '{bar} | {percentage}% | {value}/{total} | {task}',
-      },
-      cliProgress.Presets.shades_classic
-    );
-    processingBar = multibar.create(addedOrModifiedFiles.length, 0, {
-      task: 'Processing files',
-    });
+    console.log('Processing and indexing added/modified files...');
   }
+  const multibar = !logMode ? new cliProgress.MultiBar({
+    clearOnComplete: false,
+    hideCursor: true,
+    format: '{bar} | {percentage}% | {value}/{total} | {task}',
+  }, cliProgress.Presets.shades_classic) : null;
 
-  const { batchSize, cpuCores } = indexingConfig;
-  const chunkQueue: CodeChunk[] = [];
-  const queue = new PQueue({ concurrency: cpuCores });
+  const fileProgressBar = multibar?.create(addedOrModifiedFiles.length, 0, { task: 'Processing files' });
+  const chunkIndexingBar = multibar?.create(0, 0, { task: 'Indexing chunks' });
 
+  const { batchSize } = indexingConfig;
   let successCount = 0;
   let failureCount = 0;
-  let processedCount = 0;
+  const chunkQueue: CodeChunk[] = [];
+  let totalChunks = 0;
 
-  const processFileWithWorker = (file: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
+  const indexChunkBatch = async () => {
+    if (chunkQueue.length > 0) {
+      const batchToIndex = chunkQueue.splice(0, chunkQueue.length);
+      if (logMode) {
+        console.log(`Indexing ${batchToIndex.length} chunks...`);
+      } else {
+        chunkIndexingBar?.setTotal(totalChunks);
+        chunkIndexingBar?.update({ task: `Indexing ${batchToIndex.length} chunks...` });
+      }
+      await indexCodeChunks(batchToIndex);
+      chunkIndexingBar?.increment(batchToIndex.length, { task: 'Indexing chunks' });
+    }
+  };
+
+  for (const file of addedOrModifiedFiles) {
+    await new Promise<void>((resolve, reject) => {
       const worker = new Worker(path.join(process.cwd(), 'dist', 'utils', 'worker.js'));
       worker.on('message', message => {
-        processedCount++;
-        if (logMode) {
-          console.log(
-            `[${processedCount}/${addedOrModifiedFiles.length}] Processing file: ${file} - ${message.status}`
-          );
-        } else {
-          processingBar?.increment();
-        }
-
         if (message.status === 'success') {
           successCount++;
           chunkQueue.push(...message.data);
-        } else if (message.status === 'failure') {
+          totalChunks += message.data.length;
+        } else {
           failureCount++;
+        }
+        if (logMode) {
+          console.log(`[${successCount + failureCount}/${addedOrModifiedFiles.length}] Processed: ${file}`);
         }
         worker.terminate();
         resolve();
       });
       worker.on('error', err => {
         failureCount++;
-        processedCount++;
-        if (logMode) {
-          console.log(
-            `[${processedCount}/${addedOrModifiedFiles.length}] Processing file: ${file} - error`
-          );
-        } else {
-          processingBar?.increment();
-        }
         worker.terminate();
         reject(err);
       });
       const relativePath = path.relative(gitRoot, file);
       worker.postMessage({ filePath: file, gitBranch, relativePath });
     });
-  };
 
-  const producerPromise = (async () => {
-    addedOrModifiedFiles.forEach(file => queue.add(() => processFileWithWorker(file)));
-    await queue.onIdle();
-  })();
-
-  const consumerPromise = (async () => {
-    await producerPromise;
-
-    let indexingBar: cliProgress.SingleBar | undefined;
-    if (!logMode && multibar) {
-      indexingBar = multibar.create(chunkQueue.length, 0, { task: 'Indexing chunks ' });
+    if (chunkQueue.length >= batchSize) {
+      await indexChunkBatch();
     }
-    let indexedChunks = 0;
-
-    while (chunkQueue.length > 0) {
-      const batch = chunkQueue.splice(0, batchSize);
-      await indexCodeChunks(batch);
-      if (logMode) {
-        indexedChunks += batch.length;
-        console.log(`Indexed ${indexedChunks} chunks...`);
-      } else {
-        indexingBar?.increment(batch.length);
-      }
-    }
-  })();
-
-  await Promise.all([producerPromise, consumerPromise]);
-  if (!logMode && multibar) {
-    multibar.stop();
+    fileProgressBar?.increment();
   }
+
+  // Index any remaining chunks
+  await indexChunkBatch();
+
+  multibar?.stop();
 
   const newCommitHash = execSync('git rev-parse HEAD', { cwd: directory }).toString().trim();
   await updateLastIndexedCommit(gitBranch, newCommitHash);

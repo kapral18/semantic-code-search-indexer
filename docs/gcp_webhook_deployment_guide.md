@@ -151,8 +151,8 @@ This is the core of the new architecture.
         ELASTICSEARCH_CLOUD_ID=<your-cloud-id>
         ELASTICSEARCH_API_KEY=<your-base64-encoded-api-key>
 
-        # Or, for a self-managed instance, use ELASTICSEARCH_URL
-        # ELASTICSEARCH_URL=http://your-elasticsearch-instance:9200
+        # Or, for a self-managed instance, use ELASTICSEARCH_ENDPOINT
+        # ELASTICSEARCH_ENDPOINT=http://your-elasticsearch-instance:9200
 
         # --- Pub/Sub Configuration ---
         GCP_PUBSUB_TOPIC=github-pushes

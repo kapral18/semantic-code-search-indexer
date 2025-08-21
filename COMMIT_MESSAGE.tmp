@@ -1,15 +1,16 @@
-Adds Elastic Cloud support and increases VM disk size
+refactor: Improve indexer memory efficiency and visibility
 
-- Adds support for `ELASTICSEARCH_CLOUD_ID` and `ELASTICSEARCH_API_KEY` for a more secure and direct connection to Elastic Cloud.
-- Updates the Elasticsearch client logic to prioritize the Cloud ID connection method.
-- Increases the default boot disk size for the Compute Engine worker to 100GB in the deployment guide.
-- Updates the `.env.example` and deployment guide to reflect the new Elasticsearch connection variables.
+- Refactors both full and incremental indexers to use a serial, "double-batching" process. Files are processed one by one, and the resulting chunks are indexed in batches. This significantly reduces peak memory consumption.
+- Re-introduces a dedicated progress bar for chunk indexing, restoring visibility into the indexing stage that was lost in the previous refactor.
+- Reverts Elasticsearch environment variables to `ELASTICSEARCH_ENDPOINT` and `ELASTICSEARCH_USER` to maintain configuration consistency.
 
 Prompts:
 
-- "I need to make the worker instance disk larger"
-- "100GB would be sufficent"
-- "Is there an easy way to increase an existing one?"
-- "Can you add an env variable for the ELASTICSEARCH_CLOUD_ID and include that when available?"
+- "I think we need to re-work the indexer so that it parses 100 (BATCH) files then indexes 100 (BATCH) files, serially. The problem I'm seeing is that on my indexing node, it only has 4G of ram and the parser rips through all the files quickly and eventually runs out of memory. We basically need the indexer to be memory bound and as efficent memory-wise as possible."
+- "Processing does 100, but it doesnt look like indexing does anything."
+- "So if the first 100 files generates 700 chunks, will the indexer try and index all 700 chunks at a time?"
+- "When did you change the config variables for ELASTICSEARCH_USER to ELASTICSEARCH_USERNAME and ELASTICSEARCH_ENDPOINT to ELASTICSEARCH_URL?"
+- "Can you please change it back, now everything is out of sync"
+- "With the last update to the indexer, I lost visibility on the indexing."
 
 🤖 This commit was assisted by Gemini CLI

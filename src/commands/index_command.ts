@@ -48,88 +48,70 @@ export async function index(directory: string, clean: boolean) {
 
   console.log(`Found ${files.length} files to index.`);
 
-  // Create a multibar container
-  const multibar = new cliProgress.MultiBar({
-    clearOnComplete: false,
-    hideCursor: true,
-    format: '{bar} | {percentage}% | {value}/{total} | {task}',
-  }, cliProgress.Presets.shades_classic);
+  const multibar = new cliProgress.MultiBar(
+    {
+      clearOnComplete: false,
+      hideCursor: true,
+      format: '{bar} | {percentage}% | {value}/{total} | {task}',
+    },
+    cliProgress.Presets.shades_classic
+  );
 
-  const processingBar = multibar.create(files.length, 0, { task: 'Processing files' });
-  // We'll create the indexing bar later, when we know the total.
+  const fileProgressBar = multibar.create(files.length, 0, { task: 'Processing files' });
+  const chunkIndexingBar = multibar.create(0, 0, { task: 'Indexing chunks' });
 
-  const { batchSize, maxQueueSize, cpuCores } = indexingConfig;
-  const chunkQueue: CodeChunk[] = [];
-  const queue = new PQueue({ concurrency: cpuCores });
-
+  const { batchSize } = indexingConfig;
   let successCount = 0;
   let failureCount = 0;
-  let totalChunksQueued = 0;
-  const gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: directory }).toString().trim();
-  let isProducerDone = false;
+  const gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: directory })
+    .toString()
+    .trim();
+  const chunkQueue: CodeChunk[] = [];
+  let totalChunks = 0;
 
-  const processFileWithWorker = (file: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
+  const indexChunkBatch = async () => {
+    if (chunkQueue.length > 0) {
+      const batchToIndex = chunkQueue.splice(0, chunkQueue.length);
+      chunkIndexingBar.setTotal(totalChunks);
+      chunkIndexingBar.update({ task: `Indexing ${batchToIndex.length} chunks...` });
+      await indexCodeChunks(batchToIndex);
+      chunkIndexingBar.increment(batchToIndex.length, { task: 'Indexing chunks' });
+    }
+  };
+
+  for (const file of files) {
+    await new Promise<void>((resolve, reject) => {
       const worker = new Worker(path.join(process.cwd(), 'dist', 'utils', 'worker.js'));
-      worker.on('message', (message) => {
-        processingBar.increment();
+      const absolutePath = path.resolve(gitRoot, file);
+      worker.on('message', message => {
         if (message.status === 'success') {
           successCount++;
           chunkQueue.push(...message.data);
-          totalChunksQueued += message.data.length;
+          totalChunks += message.data.length;
         } else if (message.status === 'failure') {
           failureCount++;
         }
         worker.terminate();
         resolve();
       });
-      worker.on('error', (err) => {
+      worker.on('error', err => {
         failureCount++;
-        processingBar.increment();
         worker.terminate();
         reject(err);
       });
       const relativePath = path.relative(gitRoot, file);
-      worker.postMessage({ filePath: file, gitBranch, relativePath });
+      worker.postMessage({ filePath: absolutePath, gitBranch, relativePath });
     });
-  };
 
-  // Producer: Add file processing tasks to the queue
-  const producer = async () => {
-    for (const file of files) {
-      // Pause if the queue is full
-      while (chunkQueue.length > maxQueueSize) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100ms
-      }
-      const absolutePath = path.resolve(gitRoot, file);
-      queue.add(() => processFileWithWorker(absolutePath));
+    if (chunkQueue.length >= batchSize) {
+      await indexChunkBatch();
     }
-    await queue.onIdle();
-    isProducerDone = true;
-  };
+    fileProgressBar.increment();
+  }
 
-  // Consumer: Index chunks from the queue
-  const consumer = async () => {
-    const indexingBar = multibar.create(0, 0, { task: 'Indexing chunks ' });
+  // Index any remaining chunks
+  await indexChunkBatch();
 
-    while (!isProducerDone || chunkQueue.length > 0) {
-      indexingBar.setTotal(totalChunksQueued);
-      if (chunkQueue.length === 0) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Wait for more chunks
-        continue;
-      }
-
-      const batch = chunkQueue.splice(0, batchSize);
-      await indexCodeChunks(batch);
-      indexingBar.increment(batch.length);
-    }
-  };
-
-  // Run producer and consumer concurrently
-  const producerPromise = producer();
-  const consumerPromise = consumer();
-
-  await Promise.all([producerPromise, consumerPromise]);
   multibar.stop();
 
   const commitHash = execSync('git rev-parse HEAD', { cwd: directory }).toString().trim();
