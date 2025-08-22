@@ -11,7 +11,6 @@ import { SUPPORTED_FILE_EXTENSIONS } from '../utils/constants';
 import { indexingConfig } from '../config';
 import path from 'path';
 import { Worker } from 'worker_threads';
-import cliProgress from 'cli-progress';
 import PQueue from 'p-queue';
 import { execSync } from 'child_process';
 import fs from 'fs';
@@ -47,18 +46,6 @@ export async function index(directory: string, clean: boolean) {
 
   console.log(`Found ${files.length} files to index.`);
 
-  const multibar = new cliProgress.MultiBar(
-    {
-      clearOnComplete: false,
-      hideCursor: true,
-      format: '{bar} | {percentage}% | {value}/{total} | {task}',
-    },
-    cliProgress.Presets.shades_classic
-  );
-
-  const fileProgressBar = multibar.create(files.length, 0, { task: 'Parsing files' });
-  const chunkIndexingBar = multibar.create(0, 0, { task: 'Indexing chunks' });
-
   let successCount = 0;
   let failureCount = 0;
   const gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: directory })
@@ -70,6 +57,8 @@ export async function index(directory: string, clean: boolean) {
   const consumerQueue = new PQueue({ concurrency: cpuCores });
 
   let totalChunks = 0;
+  let indexedChunks = 0;
+  let indexedBatchCount = 0;
   const chunkQueue: CodeChunk[] = [];
 
   const producerWorkerPath = path.join(process.cwd(), 'dist', 'utils', 'producer_worker.js');
@@ -82,7 +71,9 @@ export async function index(directory: string, clean: boolean) {
         const consumerWorker = new Worker(consumerWorkerPath);
         consumerWorker.on('message', (msg) => {
           if (msg.status === 'success') {
-            chunkIndexingBar.increment(batch.length);
+            indexedChunks += batch.length;
+            indexedBatchCount++;
+            console.log(`Progress: Parsed ${successCount}/${files.length} files | Indexed ${indexedChunks}/${totalChunks} chunks`);
           }
           consumerWorker.terminate();
           resolve();
@@ -96,34 +87,31 @@ export async function index(directory: string, clean: boolean) {
     }
   };
 
-  files.forEach(file => {
-    producerQueue.add(() => new Promise<void>((resolve, reject) => {
+  for (const file of files) {
+    await producerQueue.add(() => new Promise<void>((resolve, reject) => {
       const worker = new Worker(producerWorkerPath);
       const absolutePath = path.resolve(gitRoot, file);
       worker.on('message', message => {
         if (message.status === 'success') {
           successCount++;
           totalChunks += message.data.length;
-          chunkIndexingBar.setTotal(totalChunks);
           chunkQueue.push(...message.data);
           scheduleConsumer();
         } else if (message.status === 'failure') {
           failureCount++;
         }
         worker.terminate();
-        fileProgressBar.increment();
         resolve();
       });
       worker.on('error', err => {
         failureCount++;
         worker.terminate();
-        fileProgressBar.increment();
         reject(err);
       });
       const relativePath = path.relative(gitRoot, file);
       worker.postMessage({ filePath: absolutePath, gitBranch, relativePath });
     }));
-  });
+  }
 
   await producerQueue.onIdle();
 
@@ -134,7 +122,7 @@ export async function index(directory: string, clean: boolean) {
       const consumerWorker = new Worker(consumerWorkerPath);
       consumerWorker.on('message', (msg) => {
         if (msg.status === 'success') {
-          chunkIndexingBar.increment(batch.length);
+          indexedChunks += batch.length;
         }
         consumerWorker.terminate();
         resolve();
@@ -149,8 +137,6 @@ export async function index(directory: string, clean: boolean) {
 
   await consumerQueue.onIdle();
 
-  multibar.stop();
-
   const commitHash = execSync('git rev-parse HEAD', { cwd: directory }).toString().trim();
   await updateLastIndexedCommit(gitBranch, commitHash);
 
@@ -158,6 +144,7 @@ export async function index(directory: string, clean: boolean) {
   console.log('Indexing Summary:');
   console.log(`  Successfully processed: ${successCount} files`);
   console.log(`  Failed to parse:      ${failureCount} files`);
+  console.log(`  Total chunks indexed: ${indexedChunks}`);
   console.log(`  HEAD commit hash:     ${commitHash}`);
   console.log('---');
   console.log('Indexing complete.');
