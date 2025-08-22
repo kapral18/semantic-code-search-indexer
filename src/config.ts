@@ -3,7 +3,7 @@ import { env } from '@xenova/transformers';
 import path from 'path';
 import os from 'os';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 export const elasticsearchConfig = {
   endpoint: process.env.ELASTICSEARCH_ENDPOINT,

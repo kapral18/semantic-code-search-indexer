@@ -1,16 +1,12 @@
-
 import { glob } from 'glob';
 import {
   createIndex,
-  indexCodeChunks,
   deleteIndex,
-  CodeChunk,
   setupElser,
   createSettingsIndex,
   updateLastIndexedCommit,
 } from '../utils/elasticsearch';
 import { SUPPORTED_FILE_EXTENSIONS } from '../utils/constants';
-import { indexingConfig } from '../config';
 import path from 'path';
 import { Worker } from 'worker_threads';
 import cliProgress from 'cli-progress';
@@ -19,6 +15,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 // @ts-ignore
 import ignore from 'ignore';
+import os from 'os';
 
 export async function index(directory: string, clean: boolean) {
   if (clean) {
@@ -57,60 +54,68 @@ export async function index(directory: string, clean: boolean) {
     cliProgress.Presets.shades_classic
   );
 
-  const fileProgressBar = multibar.create(files.length, 0, { task: 'Processing files' });
+  const fileProgressBar = multibar.create(files.length, 0, { task: 'Parsing files' });
   const chunkIndexingBar = multibar.create(0, 0, { task: 'Indexing chunks' });
 
-  const { batchSize } = indexingConfig;
   let successCount = 0;
   let failureCount = 0;
   const gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: directory })
     .toString()
     .trim();
-  const chunkQueue: CodeChunk[] = [];
+
+  const numCores = os.cpus().length;
+  const producerQueue = new PQueue({ concurrency: numCores });
+  const consumerQueue = new PQueue({ concurrency: numCores });
+
   let totalChunks = 0;
 
-  const indexChunkBatch = async () => {
-    if (chunkQueue.length > 0) {
-      const batchToIndex = chunkQueue.splice(0, chunkQueue.length);
-      chunkIndexingBar.setTotal(totalChunks);
-      chunkIndexingBar.update({ task: `Indexing ${batchToIndex.length} chunks...` });
-      await indexCodeChunks(batchToIndex);
-      chunkIndexingBar.increment(batchToIndex.length, { task: 'Indexing chunks' });
-    }
-  };
+  const producerWorkerPath = path.join(process.cwd(), 'dist', 'utils', 'producer_worker.js');
+  const consumerWorkerPath = path.join(process.cwd(), 'dist', 'utils', 'consumer_worker.js');
 
-  for (const file of files) {
-    await new Promise<void>((resolve, reject) => {
-      const worker = new Worker(path.join(process.cwd(), 'dist', 'utils', 'worker.js'));
+  files.forEach(file => {
+    producerQueue.add(() => new Promise<void>((resolve, reject) => {
+      const worker = new Worker(producerWorkerPath);
       const absolutePath = path.resolve(gitRoot, file);
       worker.on('message', message => {
         if (message.status === 'success') {
           successCount++;
-          chunkQueue.push(...message.data);
           totalChunks += message.data.length;
+          chunkIndexingBar.setTotal(totalChunks);
+          consumerQueue.add(() => new Promise<void>((resolve, reject) => {
+            const consumerWorker = new Worker(consumerWorkerPath);
+            consumerWorker.on('message', (msg) => {
+              if (msg.status === 'success') {
+                chunkIndexingBar.increment(message.data.length);
+              }
+              consumerWorker.terminate();
+              resolve();
+            });
+            consumerWorker.on('error', (err) => {
+              consumerWorker.terminate();
+              reject(err);
+            });
+            consumerWorker.postMessage(message.data);
+          }));
         } else if (message.status === 'failure') {
           failureCount++;
         }
         worker.terminate();
+        fileProgressBar.increment();
         resolve();
       });
       worker.on('error', err => {
         failureCount++;
         worker.terminate();
+        fileProgressBar.increment();
         reject(err);
       });
       const relativePath = path.relative(gitRoot, file);
       worker.postMessage({ filePath: absolutePath, gitBranch, relativePath });
-    });
+    }));
+  });
 
-    if (chunkQueue.length >= batchSize) {
-      await indexChunkBatch();
-    }
-    fileProgressBar.increment();
-  }
-
-  // Index any remaining chunks
-  await indexChunkBatch();
+  await producerQueue.onIdle();
+  await consumerQueue.onIdle();
 
   multibar.stop();
 
