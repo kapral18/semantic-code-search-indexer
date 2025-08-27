@@ -71,8 +71,9 @@ export async function incrementalIndex(directory: string) {
     deleted: deletedFiles.length,
   });
 
-  // Process deletions
-  for (const file of deletedFiles) {
+  // Process deletions and modifications
+  const filesToDelete = [...deletedFiles, ...addedOrModifiedFiles];
+  for (const file of filesToDelete) {
     await deleteDocumentsByFilePath(file);
     logger.info('Deleted documents for file', { file });
   }
