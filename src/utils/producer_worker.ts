@@ -1,6 +1,7 @@
-
 import { parentPort } from 'worker_threads';
-import { parseFile } from './parser';
+import { LanguageParser } from './parser';
+
+const languageParser = new LanguageParser();
 
 parentPort?.on('message', ({ filePath, gitBranch, relativePath }: { filePath: string | null, gitBranch: string, relativePath: string }) => {
   if (filePath === null) {
@@ -9,7 +10,7 @@ parentPort?.on('message', ({ filePath, gitBranch, relativePath }: { filePath: st
   }
 
   try {
-    const chunks = parseFile(filePath, gitBranch, relativePath);
+    const chunks = languageParser.parseFile(filePath, gitBranch, relativePath);
     parentPort?.postMessage({ status: 'success', data: chunks, filePath });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

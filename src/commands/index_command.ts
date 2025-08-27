@@ -8,7 +8,7 @@ import {
   CodeChunk,
   indexCodeChunks,
 } from '../utils/elasticsearch';
-import { SUPPORTED_FILE_EXTENSIONS } from '../utils/constants';
+import { LanguageParser } from '../utils/parser';
 import { indexingConfig } from '../config';
 import path from 'path';
 import { Worker } from 'worker_threads';
@@ -20,7 +20,9 @@ import ignore from 'ignore';
 import { logger } from '../utils/logger';
 
 export async function index(directory: string, clean: boolean) {
-  logger.info('Starting full indexing process', { directory, clean });
+  const languageParser = new LanguageParser();
+  const supportedFileExtensions = Array.from(languageParser.fileSuffixMap.keys());
+  logger.info('Starting full indexing process', { directory, clean, supportedFileExtensions });
   if (clean) {
     logger.info('Clean flag is set, deleting existing index.');
     await deleteIndex();
@@ -42,7 +44,7 @@ export async function index(directory: string, clean: boolean) {
   ig.add(['**/*_lexer.ts', '**/*_parser.ts']);
 
   const relativeSearchDir = path.relative(gitRoot, directory);
-  const globPattern = path.join(relativeSearchDir, `**/*{${SUPPORTED_FILE_EXTENSIONS.join(',')}}`);
+  const globPattern = path.join(relativeSearchDir, `**/*{${supportedFileExtensions.join(',')}}`);
 
   const allFiles = await glob(globPattern, {
     cwd: gitRoot,

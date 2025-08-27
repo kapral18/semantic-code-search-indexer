@@ -88,7 +88,12 @@ async function log(level: LogLevel, message: string, metadata: object = {}) {
     ...metadata,
   };
 
-  console.log(JSON.stringify(logEntry));
+  if (process.env.LOG_FORMAT === 'text') {
+    const metadataString = Object.keys(metadata).length > 0 ? ` ${JSON.stringify(metadata)}` : '';
+    console.log(`[${logEntry['@timestamp']}] [${logEntry['log.level']}] ${logEntry.message}${metadataString}`);
+  } else {
+    console.log(JSON.stringify(logEntry));
+  }
 
   if (esClient) {
     try {

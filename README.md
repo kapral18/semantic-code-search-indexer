@@ -117,3 +117,5 @@ Configuration is managed via environment variables in a `.env` file.
 | `ELASTICSEARCH_INDEX` | The name of the Elasticsearch index to use. | `code-chunks` |
 | `BATCH_SIZE` | The number of chunks to index in a single bulk request. | `500` |
 | `CPU_CORES` | The number of CPU cores to use for file parsing. | Half of the available cores |
+| `LOG_FORMAT` | The format of the logs. Can be `json` or `text`. | `json` |
+| `SEMANTIC_CODE_INDEXER_LANGUAGES` | A comma-separated list of languages to index. | `typescript,javascript,markdown` |
