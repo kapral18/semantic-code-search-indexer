@@ -17,10 +17,10 @@ export const javascript: LanguageConfiguration = {
     '(variable_declaration) @variable',
   ],
   symbolQueries: [
-    '(function_declaration name: (identifier) @symbol)',
-    '(generator_function_declaration name: (identifier) @symbol)',
-    '(class_declaration name: (identifier) @symbol)',
-    '(method_definition name: (property_identifier) @symbol)',
-    '(variable_declarator name: (identifier) @symbol)',
+    '(function_declaration name: (identifier) @function.name)',
+    '(generator_function_declaration name: (identifier) @function.name)',
+    '(class_declaration name: (identifier) @class.name)',
+    '(method_definition name: (property_identifier) @method.name)',
+    '(variable_declarator name: (identifier) @variable.name)',
   ],
 };

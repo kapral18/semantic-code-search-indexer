@@ -12,8 +12,8 @@ export const goConfig: LanguageConfiguration = {
     '(import_spec) @import',
   ],
   symbolQueries: [
-    '(function_declaration name: (identifier) @symbol)',
-    '(method_declaration name: (field_identifier) @symbol)',
-    '(type_spec name: (type_identifier) @symbol)',
+    '(function_declaration name: (identifier) @function.name)',
+    '(method_declaration name: (field_identifier) @method.name)',
+    '(type_spec name: (type_identifier) @type.name)',
   ],
 };

@@ -12,7 +12,10 @@ export async function search(query: string, aggregateSymbols: boolean) {
     for (const filePath in results) {
       console.log('---');
       console.log(`File: ${filePath}`);
-      console.log(`Symbols: ${results[filePath].join(', ')}`);
+      console.log('Symbols:');
+      results[filePath].forEach(symbol => {
+        console.log(`  - ${symbol.name} (${symbol.kind}) [line ${symbol.line}]`);
+      });
     }
     return;
   }

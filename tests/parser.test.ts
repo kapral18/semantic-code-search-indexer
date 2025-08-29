@@ -24,12 +24,16 @@ describe('LanguageParser', () => {
     const filePath = path.resolve(__dirname, 'fixtures/typescript.ts');
     const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/typescript.ts');
     const symbols = chunks[0].symbols;
-    expect(symbols).toContain('myFunction');
-    expect(symbols).toContain('MyClass');
-    expect(symbols).toContain('myMethod');
-    expect(symbols).toContain('myVar');
-    expect(symbols).toContain('MyType');
-    expect(symbols).toContain('MyInterface');
+    expect(symbols).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'myFunction', kind: 'function' }),
+        expect.objectContaining({ name: 'MyClass', kind: 'class' }),
+        expect.objectContaining({ name: 'myMethod', kind: 'method' }),
+        expect.objectContaining({ name: 'myVar', kind: 'variable' }),
+        expect.objectContaining({ name: 'MyType', kind: 'type' }),
+        expect.objectContaining({ name: 'MyInterface', kind: 'interface' }),
+      ])
+    );
     expect(cleanTimestamps(chunks)).toMatchSnapshot();
   });
 

@@ -5,7 +5,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import { languageConfigurations } from '../languages';
-import { CodeChunk } from './elasticsearch';
+import { CodeChunk, SymbolInfo } from './elasticsearch';
 
 const { Query } = Parser;
 
@@ -145,11 +145,19 @@ export class LanguageParser {
     );
     const imports = importNodes.map(m => m.captures[0].node.text);
 
-    let symbols: string[] = [];
+    let symbols: SymbolInfo[] = [];
     if (langConfig.symbolQueries) {
       const symbolQuery = new Query(langConfig.parser, langConfig.symbolQueries.join('\n'));
       const symbolMatches = symbolQuery.matches(tree.rootNode);
-      symbols = symbolMatches.map(m => m.captures[0].node.text);
+      symbols = symbolMatches.map(m => {
+        const capture = m.captures[0];
+        const kind = capture.name.split('.')[0] || 'symbol';
+        return {
+          name: capture.node.text,
+          kind,
+          line: capture.node.startPosition.row + 1,
+        };
+      });
     }
 
     return matches.map(({ captures }) => {

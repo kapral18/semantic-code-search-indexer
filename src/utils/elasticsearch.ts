@@ -76,7 +76,14 @@ export async function createIndex(): Promise<void> {
           language: { type: 'keyword' },
           kind: { type: 'keyword' },
           imports: { type: 'keyword' },
-          symbols: { type: 'keyword' },
+          symbols: {
+            type: 'nested',
+            properties: {
+              name: { type: 'keyword' },
+              kind: { type: 'keyword' },
+              line: { type: 'integer' },
+            },
+          },
           containerPath: { type: 'text' },
           filePath: { type: 'keyword' },
           git_file_hash: { type: 'keyword' },
@@ -154,12 +161,18 @@ export async function updateLastIndexedCommit(branch: string, commitHash: string
   });
 }
 
+export interface SymbolInfo {
+  name: string;
+  kind: string;
+  line: number;
+}
+
 export interface CodeChunk {
   type: 'code' | 'doc';
   language: string;
   kind?: string;
   imports?: string[];
-  symbols?: string[];
+  symbols?: SymbolInfo[];
   containerPath?: string;
   filePath: string;
   git_file_hash: string;
@@ -220,7 +233,7 @@ export async function searchCodeChunks(query: string): Promise<any[]> {
   }));
 }
 
-export async function aggregateBySymbols(query: string): Promise<Record<string, string[]>> {
+export async function aggregateBySymbols(query: string): Promise<Record<string, SymbolInfo[]>> {
   const response = await client.search({
     index: indexName,
     query: {
@@ -236,9 +249,30 @@ export async function aggregateBySymbols(query: string): Promise<Record<string, 
         },
         aggs: {
           symbols: {
-            terms: {
-              field: 'symbols',
-              size: 1000,
+            nested: {
+              path: 'symbols',
+            },
+            aggs: {
+              names: {
+                terms: {
+                  field: 'symbols.name',
+                  size: 1000,
+                },
+                aggs: {
+                  kind: {
+                    terms: {
+                      field: 'symbols.kind',
+                      size: 1,
+                    },
+                  },
+                  line: {
+                    terms: {
+                      field: 'symbols.line',
+                      size: 1,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -247,12 +281,16 @@ export async function aggregateBySymbols(query: string): Promise<Record<string, 
     size: 0,
   });
 
-  const results: Record<string, string[]> = {};
+  const results: Record<string, SymbolInfo[]> = {};
   if (response.aggregations) {
     const files = response.aggregations.files as any;
     for (const bucket of files.buckets) {
       const filePath = bucket.key;
-      const symbols = bucket.symbols.buckets.map((b: any) => b.key);
+      const symbols: SymbolInfo[] = bucket.symbols.names.buckets.map((b: any) => ({
+        name: b.key,
+        kind: b.kind.buckets[0].key,
+        line: b.line.buckets[0].key,
+      }));
       results[filePath] = symbols;
     }
   }

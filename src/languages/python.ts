@@ -12,7 +12,7 @@ export const pythonConfig: LanguageConfiguration = {
     '(import_from_statement) @import',
   ],
   symbolQueries: [
-    '(class_definition name: (identifier) @symbol)',
-    '(function_definition name: (identifier) @symbol)',
+    '(class_definition name: (identifier) @class.name)',
+    '(function_definition name: (identifier) @function.name)',
   ],
 };
