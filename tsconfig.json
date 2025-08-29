@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2021",
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "baseUrl": ".",
+    "paths": {}
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "libs/**/*.ts"],
   "exclude": ["node_modules"]
 }
