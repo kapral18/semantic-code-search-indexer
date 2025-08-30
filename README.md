@@ -9,6 +9,7 @@ This project is a high-performance code indexer designed to provide deep, contex
 -   **Incremental Updates**: Can efficiently update the index by only processing files that have changed since the last indexed commit.
 -   **Structured Logging**: Outputs logs in JSON format, making it easy to monitor and integrate with log management systems.
 -   **Efficient `.gitignore` Handling**: Correctly applies `.gitignore` rules to exclude irrelevant files and directories.
+-   **MCP Server**: Includes a Model Context Protocol (MCP) server that exposes the indexed data through a standardized set of tools.
 
 ---
 
@@ -97,6 +98,44 @@ Finds code using natural language.
 ```bash
 npm run search -- "a function that adds a new tool"
 ```
+
+---
+
+## MCP Server
+
+This project includes a Model Context Protocol (MCP) server that exposes the indexed data through a standardized set of tools. This allows AI coding agents to interact with the indexed codebase in a structured way.
+
+### Running the Server
+
+The MCP server can be run in two modes:
+
+**1. Stdio Mode:**
+This is the default mode. The server communicates over `stdin` and `stdout`.
+
+```bash
+npm run mcp-server
+```
+
+**2. HTTP Mode:**
+This mode is useful for running the server in a containerized environment like Docker.
+
+```bash
+npm run mcp-server:http
+```
+
+The server will listen on port 3000 by default. You can change the port by setting the `PORT` environment variable.
+
+### Available Tools
+
+The MCP server provides the following tools:
+
+| Tool | Description |
+| --- | --- |
+| `semantic_code_search` | Performs a semantic search on the code chunks in the index. This tool can combine a semantic query with a KQL filter to provide flexible and powerful search capabilities. |
+| `list_symbols_by_query` | Lists symbols that match a given KQL query. This is useful for finding all the symbols in a specific file or directory. |
+| `symbol_analysis` | Analyzes a symbol and returns a report of its definitions, call sites, and references. This is useful for understanding the role of a symbol in the codebase. |
+| `read_file_from_chunks` | Reads the content of a file from the index, providing a reconstructed view based on the most important indexed chunks. |
+| `document_symbols` | Analyzes a file to identify the key symbols that would most benefit from documentation. This is useful for automating the process of improving the semantic quality of a codebase. |
 
 ---
 

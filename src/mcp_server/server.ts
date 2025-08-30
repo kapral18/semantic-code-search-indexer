@@ -11,6 +11,7 @@ import { semanticCodeSearch, semanticCodeSearchSchema } from './tools/semantic_c
 import { listSymbolsByQuery, listSymbolsByQuerySchema } from './tools/list_symbols_by_query';
 import { symbolAnalysis, symbolAnalysisSchema } from './tools/symbol_analysis';
 import { readFile, readFileSchema } from './tools/read_file';
+import { documentSymbols, documentSymbolsSchema } from './tools/document_symbols';
 
 /**
  * The main MCP server class.
@@ -71,6 +72,16 @@ export class McpServer {
         inputSchema: readFileSchema.shape,
       },
       readFile
+    );
+
+    const documentSymbolsDescription = fs.readFileSync(path.join(__dirname, 'tools/document_symbols.md'), 'utf-8');
+    this.server.registerTool(
+      'document_symbols',
+      {
+        description: documentSymbolsDescription,
+        inputSchema: documentSymbolsSchema.shape,
+      },
+      documentSymbols
     );
   }
 
