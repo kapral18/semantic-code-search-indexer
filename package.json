@@ -14,15 +14,13 @@
     "search": "ts-node src/index.ts search",
     "incremental-index": "ts-node src/index.ts incremental-index",
     "setup": "ts-node src/index.ts setup",
-    "test": "jest --no-watchman"
+    "test": "jest",
+    "mcp-server": "ts-node src/mcp_server/bin.ts",
+    "mcp-server:http": "ts-node src/mcp_server/bin.ts http"
   },
   "keywords": [],
   "author": "",
   "license": "SSPL-1.0",
-  "description": "",
-  "engines": {
-    "node": ">=20"
-  },
   "dependencies": {
     "@elastic/elasticsearch": "^9.1.1",
     "@google-cloud/pubsub": "^5.2.0",
