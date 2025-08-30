@@ -125,6 +125,20 @@ npm run mcp-server:http
 
 The server will listen on port 3000 by default. You can change the port by setting the `PORT` environment variable.
 
+### Usage with NPX
+
+You can also run the MCP server directly from the git repository using `npx`. This is a convenient way to run the server without having to clone the repository.
+
+**Stdio Mode:**
+```bash
+ELASTICSEARCH_ENDPOINT=http://localhost:9200 npx github:elastic/semantic-code-search-indexer
+```
+
+**HTTP Mode:**
+```bash
+PORT=8080 ELASTICSEARCH_ENDPOINT=http://localhost:9200 npx github:elastic/semantic-code-search-indexer http
+```
+
 ### Available Tools
 
 The MCP server provides the following tools:
