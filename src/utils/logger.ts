@@ -65,6 +65,17 @@ if (elasticsearchConfig.logging && !process.env.MCP_SERVER_MODE) {
   }
 }
 
+/**
+ * Logs a message to the console and optionally to Elasticsearch.
+ *
+ * This function constructs a log entry with a timestamp, log level, message,
+ * and metadata, and then logs it to the console. If Elasticsearch logging is
+ * enabled, it also sends the log entry to Elasticsearch.
+ *
+ * @param level The log level.
+ * @param message The log message.
+ * @param metadata Optional metadata to include with the log entry.
+ */
 async function log(level: LogLevel, message: string, metadata: object = {}) {
   const logEntry: LogEntry = {
     '@timestamp': new Date().toISOString(),
@@ -113,6 +124,12 @@ async function log(level: LogLevel, message: string, metadata: object = {}) {
   }
 }
 
+/**
+ * The logger object.
+ *
+ * This object provides a set of functions for logging messages at different
+ * levels.
+ */
 export const logger = {
   info: (message: string, metadata?: object) => log(LogLevel.INFO, message, metadata),
   warn: (message: string, metadata?: object) => log(LogLevel.WARN, message, metadata),

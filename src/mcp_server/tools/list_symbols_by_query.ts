@@ -3,12 +3,26 @@ import { fromKueryExpression, toElasticsearchQuery } from '../../../libs/es-quer
 import { aggregateBySymbols } from '../../utils/elasticsearch';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
 
+/**
+ * The Zod schema for the `listSymbolsByQuery` tool.
+ * @property {string} kql - The KQL query string.
+ */
 export const listSymbolsByQuerySchema = z.object({
   kql: z.string().describe('The KQL query string.'),
 });
 
 export type ListSymbolsByQueryParams = z.infer<typeof listSymbolsByQuerySchema>;
 
+/**
+ * Lists symbols that match a given KQL query.
+ *
+ * This function uses the `aggregateBySymbols` function to perform the
+ * aggregation.
+ *
+ * @param {ListSymbolsByQueryParams} params - The parameters for the function.
+ * @returns {Promise<CallToolResult>} A promise that resolves to a
+ * `CallToolResult` object containing the aggregated symbols.
+ */
 export async function listSymbolsByQuery(params: ListSymbolsByQueryParams): Promise<CallToolResult> {
   const { kql } = params;
 

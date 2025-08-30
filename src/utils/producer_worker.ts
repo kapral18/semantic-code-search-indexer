@@ -1,3 +1,10 @@
+/**
+ * This is a worker thread that is responsible for parsing files.
+ *
+ * It receives file paths from the main thread, parses them using the
+ * `LanguageParser`, and then sends the resulting code chunks back to the main
+ * thread.
+ */
 import { parentPort } from 'worker_threads';
 import { LanguageParser } from './parser';
 

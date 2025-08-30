@@ -14,6 +14,15 @@ import PQueue from 'p-queue';
 import { execSync } from 'child_process';
 import { logger } from '../utils/logger';
 
+/**
+ * The main function for the `incremental-index` command.
+ *
+ * This function is responsible for orchestrating the incremental indexing
+ * process. It finds the last indexed commit, pulls the latest changes from
+ * the remote, and then processes the changed files.
+ *
+ * @param directory The directory to index.
+ */
 export async function incrementalIndex(directory: string) {
   logger.info('Starting incremental indexing process', { directory });
   await setupElser();

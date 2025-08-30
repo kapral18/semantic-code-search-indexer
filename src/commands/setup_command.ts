@@ -1,8 +1,16 @@
-
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
+/**
+ * The main function for the `setup` command.
+ *
+ * This function is responsible for cloning a git repository into the `.repos`
+ * directory. If the repository already exists, it will pull the latest
+ * changes.
+ *
+ * @param repoUrl The URL of the git repository to clone.
+ */
 export async function setup(repoUrl: string) {
   const reposDir = path.join(process.cwd(), '.repos');
 

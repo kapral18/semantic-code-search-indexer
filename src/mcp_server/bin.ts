@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+/**
+ * This is the main entry point for the MCP server.
+ *
+ * It parses the command-line arguments to determine whether to start the
+ * server in stdio or HTTP mode, and then creates and starts the server.
+ */
 import { McpServer } from './server';
 
 const serverType = process.argv[2] || 'stdio';

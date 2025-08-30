@@ -1,8 +1,18 @@
-
 import { LanguageServerService } from '../utils/language_server';
 import { findProjectRoot } from '../utils/find_project_root';
 import path from 'path';
 
+/**
+ * The main function for the `references` command.
+ *
+ * This function is responsible for finding all references to a symbol at a
+ * given position in a file. It uses the `LanguageServerService` to communicate
+ * with a TypeScript language server.
+ *
+ * @param filePath The path to the file.
+ * @param line The line number of the symbol.
+ * @param character The character number of the symbol.
+ */
 export async function references(filePath: string, line: number, character: number) {
   const absoluteFilePath = path.resolve(filePath);
   const projectRoot = findProjectRoot(absoluteFilePath);
