@@ -143,21 +143,17 @@ export class LanguageParser {
     const importNodes = matches.filter(
       m => m.captures.some(c => c.name === 'import.path')
     );
-    const imports = importNodes.map(m => m.captures[0].node.text.replace(/['"]/g, ''));
-
-    const importedFiles: string[] = [];
-    const importedModules: string[] = [];
-
-    for (const importPath of imports) {
+    const imports = importNodes.map(m => {
+      const importPath = m.captures[0].node.text.replace(/['"]/g, '');
       if (importPath.startsWith('.')) {
         const resolvedPath = path.resolve(path.dirname(filePath), importPath);
         const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
         const projectRelativePath = path.relative(gitRoot, resolvedPath);
-        importedFiles.push(projectRelativePath);
+        return { path: projectRelativePath, type: 'file' as const };
       } else {
-        importedModules.push(importPath);
+        return { path: importPath, type: 'module' as const };
       }
-    }
+    });
 
     let symbols: SymbolInfo[] = [];
     if (langConfig.symbolQueries) {
@@ -199,8 +195,6 @@ export class LanguageParser {
         language: langConfig.name,
         kind: node.type,
         imports,
-        imported_files: importedFiles,
-        imported_modules: importedModules,
         symbols,
         containerPath,
         filePath: relativePath,

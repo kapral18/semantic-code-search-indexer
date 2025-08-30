@@ -11,12 +11,11 @@ exports[`LanguageParser should parse Go fixtures correctly 1`] = `
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imported_files": [],
-    "imported_modules": [
-      "fmt",
-    ],
     "imports": [
-      "fmt",
+      {
+        "path": "fmt",
+        "type": "module",
+      },
     ],
     "kind": "import_declaration",
     "language": "go",
@@ -49,12 +48,11 @@ import "fmt"",
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imported_files": [],
-    "imported_modules": [
-      "fmt",
-    ],
     "imports": [
-      "fmt",
+      {
+        "path": "fmt",
+        "type": "module",
+      },
     ],
     "kind": "interpreted_string_literal",
     "language": "go",
@@ -87,12 +85,11 @@ kind: interpreted_string_literal
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imported_files": [],
-    "imported_modules": [
-      "fmt",
-    ],
     "imports": [
-      "fmt",
+      {
+        "path": "fmt",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "go",
@@ -125,12 +122,11 @@ kind: comment
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imported_files": [],
-    "imported_modules": [
-      "fmt",
-    ],
     "imports": [
-      "fmt",
+      {
+        "path": "fmt",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "go",
@@ -163,12 +159,11 @@ kind: comment
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imported_files": [],
-    "imported_modules": [
-      "fmt",
-    ],
     "imports": [
-      "fmt",
+      {
+        "path": "fmt",
+        "type": "module",
+      },
     ],
     "kind": "call_expression",
     "language": "go",
@@ -206,12 +201,11 @@ exports[`LanguageParser should parse Java fixtures correctly 1`] = `
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imported_files": [],
-    "imported_modules": [
-      "java.util.List",
-    ],
     "imports": [
-      "java.util.List",
+      {
+        "path": "java.util.List",
+        "type": "module",
+      },
     ],
     "kind": "scoped_identifier",
     "language": "java",
@@ -246,12 +240,11 @@ java.util.List",
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imported_files": [],
-    "imported_modules": [
-      "java.util.List",
-    ],
     "imports": [
-      "java.util.List",
+      {
+        "path": "java.util.List",
+        "type": "module",
+      },
     ],
     "kind": "block_comment",
     "language": "java",
@@ -289,12 +282,11 @@ containerPath: MyClass
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imported_files": [],
-    "imported_modules": [
-      "java.util.List",
-    ],
     "imports": [
-      "java.util.List",
+      {
+        "path": "java.util.List",
+        "type": "module",
+      },
     ],
     "kind": "block_comment",
     "language": "java",
@@ -330,12 +322,11 @@ containerPath: MyClass
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imported_files": [],
-    "imported_modules": [
-      "java.util.List",
-    ],
     "imports": [
-      "java.util.List",
+      {
+        "path": "java.util.List",
+        "type": "module",
+      },
     ],
     "kind": "method_invocation",
     "language": "java",
@@ -373,12 +364,11 @@ exports[`LanguageParser should parse JavaScript fixtures correctly 1`] = `
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "javascript",
@@ -421,12 +411,11 @@ kind: comment
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "string",
     "language": "javascript",
@@ -471,12 +460,11 @@ kind: string
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "javascript",
@@ -523,12 +511,11 @@ kind: comment
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "javascript",
@@ -573,12 +560,11 @@ kind: comment
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "call_expression",
     "language": "javascript",
@@ -697,12 +683,11 @@ exports[`LanguageParser should parse Python fixtures correctly 1`] = `
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imported_files": [],
-    "imported_modules": [
-      "os",
-    ],
     "imports": [
-      "os",
+      {
+        "path": "os",
+        "type": "module",
+      },
     ],
     "kind": "dotted_name",
     "language": "python",
@@ -740,12 +725,11 @@ os",
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imported_files": [],
-    "imported_modules": [
-      "os",
-    ],
     "imports": [
-      "os",
+      {
+        "path": "os",
+        "type": "module",
+      },
     ],
     "kind": "call",
     "language": "python",
@@ -788,12 +772,11 @@ exports[`LanguageParser should parse TypeScript fixtures correctly 1`] = `
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "typescript",
@@ -846,12 +829,11 @@ kind: comment
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "string",
     "language": "typescript",
@@ -906,12 +888,11 @@ kind: string
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "typescript",
@@ -968,12 +949,11 @@ kind: comment
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "comment",
     "language": "typescript",
@@ -1028,12 +1008,11 @@ kind: comment
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imported_files": [],
-    "imported_modules": [
-      "b",
-    ],
     "imports": [
-      "b",
+      {
+        "path": "b",
+        "type": "module",
+      },
     ],
     "kind": "call_expression",
     "language": "typescript",
