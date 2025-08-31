@@ -7,9 +7,15 @@ export const typescript: LanguageConfiguration = {
   fileSuffixes: ['.ts', '.tsx'],
   parser: ts.typescript,
   queries: [
-    '(call_expression) @call',
-    '(import_statement source: (string) @import.path)',
+    '(import_statement) @import',
+    '(lexical_declaration) @variable',
+    '(method_definition) @method',
+    '(class_declaration) @class',
+    '(interface_declaration) @interface',
+    '(export_statement) @export',
     '(comment) @comment',
+    '(function_declaration) @function',
+    '(_ (comment)+ @doc)',
     `
     (
       (comment)+ @doc
@@ -66,6 +72,12 @@ export const typescript: LanguageConfiguration = {
       (interface_declaration) @interface
     ) @interface_with_doc
     `,
+  ],
+  importQueries: [
+    '(import_statement (import_clause (named_imports (import_specifier name: (identifier) @import.symbol))) source: (string) @import.path)',
+    '(import_statement (import_clause (namespace_import (identifier) @import.symbol)) source: (string) @import.path)',
+    '(import_statement (import_clause (identifier) @import.symbol) source: (string) @import.path)',
+    '(import_statement source: (string) @import.path)',
   ],
   symbolQueries: [
     '(function_declaration name: (identifier) @function.name)',

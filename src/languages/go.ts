@@ -6,9 +6,14 @@ export const goConfig: LanguageConfiguration = {
   fileSuffixes: ['.go'],
   parser: go,
     queries: [
-    '(call_expression) @call',
     '(import_declaration) @import',
-    '(import_spec path: (interpreted_string_literal) @import.path)',
+    '(if_statement) @if',
+    '(expression_statement) @expression',
+    '(return_statement) @return',
+    '(function_declaration) @function',
+    '(type_declaration) @type',
+    '(method_declaration) @method',
+    '(call_expression) @call',
     '(comment) @comment',
     `
     (
@@ -31,6 +36,9 @@ export const goConfig: LanguageConfiguration = {
       (method_declaration) @method
     ) @method_with_doc
     `,
+  ],
+  importQueries: [
+    '(import_spec path: (interpreted_string_literal) @import.path)',
   ],
   symbolQueries: [
     '(function_declaration name: (identifier) @function.name)',

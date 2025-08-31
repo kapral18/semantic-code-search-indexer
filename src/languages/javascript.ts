@@ -7,8 +7,15 @@ export const javascript: LanguageConfiguration = {
   fileSuffixes: ['.js', '.jsx'],
   parser: js,
   queries: [
+    '(import_statement) @import',
+    '(lexical_declaration) @variable',
+    '(if_statement) @if',
+    '(expression_statement) @expression',
+    '(return_statement) @return',
+    '(method_definition) @method',
+    '(class_declaration) @class',
+    '(export_statement) @export',
     '(call_expression) @call',
-    '(import_statement source: (string) @import.path)',
     '(comment) @comment',
     `
     (
@@ -52,6 +59,12 @@ export const javascript: LanguageConfiguration = {
       (variable_declaration) @variable
     ) @variable_with_doc
     `,
+  ],
+  importQueries: [
+    '(import_statement (import_clause (named_imports (import_specifier name: (identifier) @import.symbol))) source: (string) @import.path)',
+    '(import_statement (import_clause (namespace_import (identifier) @import.symbol)) source: (string) @import.path)',
+    '(import_statement (import_clause (identifier) @import.symbol) source: (string) @import.path)',
+    '(import_statement source: (string) @import.path)',
   ],
   symbolQueries: [
     '(function_declaration name: (identifier) @function.name)',

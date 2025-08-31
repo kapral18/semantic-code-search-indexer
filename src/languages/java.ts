@@ -6,8 +6,13 @@ export const javaConfig: LanguageConfiguration = {
   fileSuffixes: ['.java'],
   parser: java,
     queries: [
+    '(import_declaration) @import',
+    '(if_statement) @if',
+    '(expression_statement) @expression',
+    '(return_statement) @return',
+    '(method_declaration) @method',
+    '(class_declaration) @class',
     '(method_invocation) @call',
-    '(import_declaration (scoped_identifier) @import.path)',
     '(line_comment) @comment',
     '(block_comment) @comment',
     `
@@ -24,6 +29,9 @@ export const javaConfig: LanguageConfiguration = {
       (method_declaration) @method
     ) @method_with_doc
     `,
+  ],
+  importQueries: [
+    '(import_declaration (scoped_identifier (identifier) @import.symbol) @import.path)',
   ],
   symbolQueries: [
     '(class_declaration name: (identifier) @class.name)',

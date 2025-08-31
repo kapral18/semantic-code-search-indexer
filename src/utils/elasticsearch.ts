@@ -101,6 +101,7 @@ export async function createIndex(): Promise<void> {
             properties: {
               path: { type: 'keyword' },
               type: { type: 'keyword' },
+              symbols: { type: 'keyword' },
             },
           },
           symbols: {
@@ -198,7 +199,7 @@ export interface CodeChunk {
   type: 'code' | 'doc';
   language: string;
   kind?: string;
-  imports?: { path: string; type: 'module' | 'file' }[];
+  imports?: { path: string; type: 'module' | 'file'; symbols?: string[] }[];
   symbols?: SymbolInfo[];
   containerPath?: string;
   filePath: string;

@@ -14,6 +14,7 @@ export interface LanguageConfiguration {
   fileSuffixes: string[];
   parser: any; // This can be a tree-sitter parser or null for custom parsers
   queries: string[];
+  importQueries?: string[];
   symbolQueries?: string[];
 }
 
@@ -138,22 +139,63 @@ export class LanguageParser {
     const tree = parser.parse(sourceCode);
     const query = new Query(langConfig.parser, langConfig.queries.join('\n'));
     const matches = query.matches(tree.rootNode);
+    fs.writeFileSync('matches.json', JSON.stringify(matches, null, 2));
     const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
 
-    const importNodes = matches.filter(
-      m => m.captures.some(c => c.name === 'import.path')
-    );
-    const imports = importNodes.map(m => {
-      const importPath = m.captures[0].node.text.replace(/['"]/g, '');
-      if (importPath.startsWith('.')) {
-        const resolvedPath = path.resolve(path.dirname(filePath), importPath);
-        const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
-        const projectRelativePath = path.relative(gitRoot, resolvedPath);
-        return { path: projectRelativePath, type: 'file' as const };
-      } else {
-        return { path: importPath, type: 'module' as const };
+    let imports: { path: string; type: 'module' | 'file'; symbols?: string[] }[] = [];
+    if (langConfig.importQueries) {
+      const importQuery = new Query(langConfig.parser, langConfig.importQueries.join('\n'));
+      const importMatches = importQuery.matches(tree.rootNode);
+      const importNodes = importMatches.filter(m =>
+        m.captures.some(c => c.name.startsWith('import'))
+      );
+
+      const importsByPath: Record<
+        string,
+        { path: string; type: 'module' | 'file'; symbols: string[] }
+      > = {};
+      for (const match of importNodes) {
+        let importPath = '';
+        let symbol = '';
+        for (const capture of match.captures) {
+          if (capture.name === 'import.path') {
+            importPath = capture.node.text.replace(/['"]/g, '');
+          } else if (capture.name === 'import.symbol') {
+            symbol = capture.node.text;
+          }
+        }
+
+        if (importPath) {
+          if (!importsByPath[importPath]) {
+            if (importPath.startsWith('.')) {
+              const resolvedPath = path.resolve(
+                path.dirname(filePath),
+                importPath
+              );
+              const gitRoot = execSync('git rev-parse --show-toplevel')
+                .toString()
+                .trim();
+              const projectRelativePath = path.relative(gitRoot, resolvedPath);
+              importsByPath[importPath] = {
+                path: projectRelativePath,
+                type: 'file' as const,
+                symbols: [],
+              };
+            } else {
+              importsByPath[importPath] = {
+                path: importPath,
+                type: 'module' as const,
+                symbols: [],
+              };
+            }
+          }
+          if (symbol && !importsByPath[importPath].symbols.includes(symbol)) {
+            importsByPath[importPath].symbols.push(symbol);
+          }
+        }
       }
-    });
+      imports = Object.values(importsByPath);
+    }
 
     let symbols: SymbolInfo[] = [];
     if (langConfig.symbolQueries) {
@@ -170,7 +212,13 @@ export class LanguageParser {
       });
     }
 
-    return matches.map(({ captures }) => {
+    const uniqueMatches = Array.from(new Map(matches.map(match => {
+      const node = match.captures[0].node;
+      const chunkHash = createHash('sha256').update(node.text).digest('hex');
+      return [`${node.startIndex}-${node.endIndex}-${chunkHash}`, match];
+    })).values());
+
+    return uniqueMatches.map(({ captures }) => {
       const node = captures[0].node;
       const content = node.text;
       const chunkHash = createHash('sha256').update(content).digest('hex');

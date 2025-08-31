@@ -26,8 +26,16 @@ interface CodeChunkHit {
     content: string;
     startLine: number;
     endLine: number;
+    kind: string;
   };
   sort: (string | number)[];
+}
+
+interface ReconstructedChunk {
+  content: string;
+  startLine: number;
+  endLine: number;
+  kind: string;
 }
 
 /**
@@ -58,6 +66,7 @@ export async function readFile({ filePaths }: z.infer<typeof readFileSchema>) {
     const response = await client.search({
       index,
       size: 1000, // Fetch in batches of 1000
+      _source: ['filePath', 'content', 'startLine', 'endLine', 'kind'],
       query: {
         bool: {
           should: filePaths.map(filePath => ({
@@ -90,7 +99,7 @@ export async function readFile({ filePaths }: z.infer<typeof readFileSchema>) {
   }
 
   // Reconstruct each file
-  const reconstructedFiles: { [filePath: string]: string } = {};
+  const reconstructedFiles: { [filePath: string]: ReconstructedChunk[] | string } = {};
   for (const filePath of filePaths) {
     const chunks = chunksByFile.get(filePath);
 
@@ -99,25 +108,12 @@ export async function readFile({ filePaths }: z.infer<typeof readFileSchema>) {
       continue;
     }
 
-    let reconstructedContent = '';
-    let lastLine = 0;
-
-    for (const chunk of chunks) {
-      if (chunk._source.startLine > lastLine + 1) {
-        reconstructedContent += `
-// ... [irrelevant sections omitted] ...
-
-`;
-      }
-      reconstructedContent += chunk._source.content;
-      lastLine = chunk._source.endLine;
-    }
-    reconstructedFiles[filePath] = reconstructedContent;
+    reconstructedFiles[filePath] = chunks.map(chunk => chunk._source);
   }
 
   const content = Object.entries(reconstructedFiles).map(([filePath, fileContent]) => ({
     type: 'text' as const,
-    text: `File: ${filePath}\n\n${fileContent}`,
+    text: `File: ${filePath}\n\n${JSON.stringify(fileContent, null, 2)}`,
   }));
 
   return {
