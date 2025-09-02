@@ -54,11 +54,11 @@ This guide provides step-by-step instructions for deploying the code indexer to 
     sudo apt-get install -y git
     ```
 
-4.  **Clone and Set Up the `code-indexer` Project**:
+4.  **Clone and Set Up the `semantic-code-search-indexer` Project**:
     ```bash
-    # Clone your code-indexer repository
-    git clone <your-code-indexer-repo-url>
-    cd code-indexer
+    # Clone your semantic-code-search-indexer repository
+    git clone <your-semantic-code-search-indexer-repo-url>
+    cd semantic-code-search-indexer
 
     # Install dependencies
     npm install
@@ -87,9 +87,9 @@ You can use either `systemd` timers (recommended for robustness) or a traditiona
 
 This method is more robust as it provides better logging and management capabilities.
 
-1.  **Create a `.env` file** in the `code-indexer` directory on the VM to hold your environment variables.
+1.  **Create a `.env` file** in the `semantic-code-search-indexer` directory on the VM to hold your environment variables.
     ```ini
-    # /home/<your_username>/code-indexer/.env
+    # /home/<your_username>/semantic-code-search-indexer/.env
     # --- Elasticsearch Configuration ---
     ELASTICSEARCH_CLOUD_ID=<your-cloud-id>
     ELASTICSEARCH_API_KEY=<your-base64-encoded-api-key>
@@ -109,8 +109,8 @@ This method is more robust as it provides better logging and management capabili
     [Service]
     Type=oneshot
     User=<your_username>
-    WorkingDirectory=/home/<your_username>/code-indexer
-    EnvironmentFile=/home/<your_username>/code-indexer/.env
+    WorkingDirectory=/home/<your_username>/semantic-code-search-indexer
+    EnvironmentFile=/home/<your_username>/semantic-code-search-indexer/.env
     ExecStart=/usr/bin/npm run incremental-index -- .repos/<your_repo_name>
 
     [Install]
@@ -164,15 +164,82 @@ This is a simpler but less flexible method.
 2.  **Add the cron job**:
     Add the following line to the file to run the indexer every 5 minutes. Replace `<your_username>` and `<your_repo_name>`.
     ```cron
-    */5 * * * * export $(cat /home/<your_username>/code-indexer/.env | xargs) && /usr/bin/npm --prefix /home/<your_username>/code-indexer run incremental-index -- .repos/<your_repo_name> >> /home/<your_username>/code-indexer/cron.log 2>&1
+    */5 * * * * export $(cat /home/<your_username>/semantic-code-search-indexer/.env | xargs) && /usr/bin/npm --prefix /home/<your_username>/semantic-code-search-indexer run incremental-index -- .repos/<your_repo_name> >> /home/<your_username>/semantic-code-search-indexer/cron.log 2>&1
     ```
     *This command sources the `.env` file, runs the command, and redirects all output and errors to a `cron.log` file.*
 
 3.  **Save and exit** the editor. The cron job is now active.
 
+### Running Multiple Incremental Indexers
+
+You can run multiple indexers on the same VM to handle different repositories or configurations. The following steps describe how to set up a second indexer, which can be adapted for additional indexers.
+
+1.  **Create a separate `.env` file** for the new indexer. This allows you to override environment variables.
+    ```ini
+    # /home/<your_username>/semantic-code-search-indexer/.env.indexer2
+    # --- Elasticsearch Configuration for the second indexer ---
+    ELASTICSEARCH_CLOUD_ID=<your-cloud-id>
+    ELASTICSEARCH_API_KEY=<your-base64-encoded-api-key>
+    ELASTICSEARCH_INDEX=my-second-index-name
+    SEMANTIC_CODE_INDEXER_LANGUAGES=go,python
+    ```
+
+2.  **Create a new `systemd` service file** for the second indexer.
+    ```bash
+    sudo nano /etc/systemd/system/incremental-indexer-2.service
+    ```
+    Paste the following, updating the `EnvironmentFile` to point to your new `.env` file and specifying the target repository.
+    ```ini
+    [Unit]
+    Description=Code Indexer Incremental Runner 2
+    Wants=incremental-indexer-2.timer
+
+    [Service]
+    Type=oneshot
+    User=<your_username>
+    WorkingDirectory=/home/<your_username>/semantic-code-search-indexer
+    EnvironmentFile=/home/<your_username>/semantic-code-search-indexer/.env.indexer2
+    ExecStart=/usr/bin/npm run incremental-index -- .repos/<your_second_repo_name>
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+3.  **Create a corresponding `systemd` timer file**.
+    ```bash
+    sudo nano /etc/systemd/system/incremental-indexer-2.timer
+    ```
+    Paste the following content:
+    ```ini
+    [Unit]
+    Description=Run Incremental Indexer 2 every 5 minutes
+    Requires=incremental-indexer-2.service
+
+    [Timer]
+    Unit=incremental-indexer-2.service
+    OnCalendar=*:0/5
+
+    [Install]
+    WantedBy=timers.target
+    ```
+
+4.  **Enable and start the new timer**.
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl enable incremental-indexer-2.timer
+    sudo systemctl start incremental-indexer-2.timer
+    ```
+
+5.  **Monitor the new service**:
+    You can now monitor your second indexer independently.
+    ```bash
+    sudo systemctl status incremental-indexer-2.timer
+    journalctl -u incremental-indexer-2.service -f
+    ```
+
 ## 4. Monitoring
 
 -   **Systemd**: Use `journalctl -u incremental-indexer.service -f` to follow the structured JSON logs in real-time. You can use tools like `jq` to parse and filter the logs.
--   **Cron**: Monitor the `cron.log` file for output: `tail -f ~/code-indexer/cron.log`.
+-   **Cron**: Monitor the `cron.log` file for output: `tail -f ~/semantic-code-search-indexer/cron.log`.
 -   **GCP Logging**: Configure the [Ops Agent](https://cloud.google.com/monitoring/agent/ops-agent) on your VM to stream the log files to Google Cloud Logging for a centralized, searchable view.
 -   **VM Health**: Monitor CPU, disk, and memory utilization for your Compute Engine instance in the GCP Console under **Compute Engine > VM instances > Monitoring**.
