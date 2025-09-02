@@ -9,7 +9,7 @@ describe('LanguageParser', () => {
   let parser: LanguageParser;
 
   beforeAll(() => {
-    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python,json';
+    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python,json,gradle,properties,text';
     parser = new LanguageParser();
   });
 
@@ -77,6 +77,24 @@ describe('LanguageParser', () => {
   it('should parse JSON fixtures correctly', () => {
     const filePath = path.resolve(__dirname, 'fixtures/json.json');
     const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/json.json');
+    expect(cleanTimestamps(chunks)).toMatchSnapshot();
+  });
+
+  it('should parse Gradle fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/gradle.gradle');
+    const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/gradle.gradle');
+    expect(cleanTimestamps(chunks)).toMatchSnapshot();
+  });
+
+  it('should parse Properties fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/properties.properties');
+    const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/properties.properties');
+    expect(cleanTimestamps(chunks)).toMatchSnapshot();
+  });
+
+  it('should parse Text fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/text.txt');
+    const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/text.txt');
     expect(cleanTimestamps(chunks)).toMatchSnapshot();
   });
 });

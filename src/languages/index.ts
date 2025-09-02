@@ -7,6 +7,9 @@ import { javaConfig } from './java';
 import { goConfig } from './go';
 import { pythonConfig } from './python';
 import { jsonConfig } from './json';
+import { gradleConfig } from './gradle';
+import { propertiesConfig } from './properties';
+import { textConfig } from './text';
 
 export const languageConfigurations = {
   typescript,
@@ -17,4 +20,7 @@ export const languageConfigurations = {
   go: goConfig,
   python: pythonConfig,
   json: jsonConfig,
+  gradle: gradleConfig,
+  properties: propertiesConfig,
+  text: textConfig,
 };

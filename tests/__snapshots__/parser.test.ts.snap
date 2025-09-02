@@ -179,6 +179,31 @@ type MyType struct {
 ]
 `;
 
+exports[`LanguageParser should parse Gradle fixtures correctly 1`] = `
+[
+  {
+    "chunk_hash": "14110e05d784ac5713d3433f9a03b2b56b8d57dbacea269ac848ac5e89f43672",
+    "content": "// This is a gradle file
+apply plugin: 'java'
+",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 3,
+    "filePath": "tests/fixtures/gradle.gradle",
+    "git_branch": "main",
+    "git_file_hash": "117a9e843f104c412bb5b4aaac1cd1b4dc931959",
+    "language": "text",
+    "semantic_text": "filePath: tests/fixtures/gradle.gradle
+
+// This is a gradle file
+apply plugin: 'java'
+",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+]
+`;
+
 exports[`LanguageParser should parse JSON fixtures correctly 1`] = `
 [
   {
@@ -1141,6 +1166,53 @@ This is another paragraph.
 ]
 `;
 
+exports[`LanguageParser should parse Properties fixtures correctly 1`] = `
+[
+  {
+    "chunk_hash": "621a201da38f18e6e3a964aa931de8dca5f29be30ca781c80145d0df560e114d",
+    "containerPath": "",
+    "content": "# This is a properties file",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/properties.properties",
+    "git_branch": "main",
+    "git_file_hash": "546ce71ae8dc740b15b5d356cf2a9b2a5c23d30a",
+    "imports": [],
+    "kind": "comment",
+    "language": "properties",
+    "semantic_text": "filePath: tests/fixtures/properties.properties
+kind: comment
+
+# This is a properties file",
+    "startLine": 1,
+    "symbols": [],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "563f0357118d05ef145d6bddf2966cc23e86ca8f2f013f915e565afdf09f7a23",
+    "containerPath": "",
+    "content": "key=value",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 2,
+    "filePath": "tests/fixtures/properties.properties",
+    "git_branch": "main",
+    "git_file_hash": "546ce71ae8dc740b15b5d356cf2a9b2a5c23d30a",
+    "imports": [],
+    "kind": "property",
+    "language": "properties",
+    "semantic_text": "filePath: tests/fixtures/properties.properties
+kind: property
+
+key=value",
+    "startLine": 2,
+    "symbols": [],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+]
+`;
+
 exports[`LanguageParser should parse Python fixtures correctly 1`] = `
 [
   {
@@ -1379,6 +1451,27 @@ kind: expression_statement
       },
     ],
     "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+]
+`;
+
+exports[`LanguageParser should parse Text fixtures correctly 1`] = `
+[
+  {
+    "chunk_hash": "9be104294df7d5a59c328241d49ac062e2c7b9660636e7f511e3a1dc3d919377",
+    "content": "This is a text file.",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/text.txt",
+    "git_branch": "main",
+    "git_file_hash": "1cf9ef97c0c1e1b299d36fca0faef53a53c3c29f",
+    "language": "text",
+    "semantic_text": "filePath: tests/fixtures/text.txt
+
+This is a text file.",
+    "startLine": 1,
+    "type": "doc",
     "updated_at": "[TIMESTAMP]",
   },
 ]

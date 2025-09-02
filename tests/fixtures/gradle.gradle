@@ -1,0 +1,2 @@
+// This is a gradle file
+apply plugin: 'java'

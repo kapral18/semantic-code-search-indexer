@@ -62,9 +62,44 @@ export class LanguageParser {
       if (langConfig.name === 'json') {
         return this.parseJson(filePath, gitBranch, relativePath);
       }
+      if (langConfig.name === 'text' || langConfig.name === 'gradle') {
+        return this.parseText(filePath, gitBranch, relativePath);
+      }
     }
 
     return this.parseWithTreeSitter(filePath, gitBranch, relativePath, langConfig);
+  }
+
+  private parseText(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
+    const now = new Date().toISOString();
+    const content = fs.readFileSync(filePath, 'utf8');
+    const chunks = content.split(/\n\s*\n/); // Split by paragraphs
+    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
+
+    return chunks
+      .filter(chunk => /[a-zA-Z0-9]/.test(chunk)) // Filter out chunks with no alphanumeric characters
+      .map(chunk => {
+        const startLine = (content.substring(0, content.indexOf(chunk)).match(/\n/g) || []).length + 1;
+        const endLine = startLine + (chunk.match(/\n/g) || []).length;
+        const chunkHash = createHash('sha256').update(chunk).digest('hex');
+        const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
+            type: 'doc',
+            language: 'text',
+            filePath: relativePath,
+            git_file_hash: gitFileHash,
+            git_branch: gitBranch,
+            chunk_hash: chunkHash,
+            content: chunk,
+            startLine,
+            endLine,
+            created_at: now,
+            updated_at: now,
+        };
+        return {
+          ...baseChunk,
+          semantic_text: this.prepareSemanticText(baseChunk),
+        } as CodeChunk;
+    });
   }
 
   private parseMarkdown(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
