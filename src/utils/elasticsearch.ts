@@ -1,5 +1,9 @@
 import { Client, ClientOptions } from '@elastic/elasticsearch';
-import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
+import {
+  AggregationsAggregate,
+  ClusterHealthResponse,
+  QueryDslQueryContainer,
+} from '@elastic/elasticsearch/lib/api/types';
 import { elasticsearchConfig } from '../config';
 export { elasticsearchConfig };
 import { logger } from './logger';
@@ -167,8 +171,8 @@ export async function getLastIndexedCommit(branch: string): Promise<string | nul
       id: branch,
     });
     return response._source?.commit_hash ?? null;
-  } catch (error: any) {
-    if (error.meta?.statusCode === 404) {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'meta' in error && (error.meta as any).statusCode === 404) {
       return null;
     }
     throw error;
@@ -215,6 +219,13 @@ export interface CodeChunk {
   updated_at: string;
 }
 
+interface ErroredDocument {
+  status: number;
+  error: any;
+  operation: any;
+  document: CodeChunk;
+}
+
 /**
  * Indexes an array of code chunks into Elasticsearch.
  *
@@ -233,7 +244,7 @@ export async function indexCodeChunks(chunks: CodeChunk[]): Promise<void> {
   const bulkResponse = await client.bulk({ refresh: false, operations });
 
   if (bulkResponse.errors) {
-    const erroredDocuments: any[] = [];
+    const erroredDocuments: ErroredDocument[] = [];
     bulkResponse.items.forEach((action: any, i: number) => {
       const operation = Object.keys(action)[0];
       if (action[operation].error) {
@@ -241,7 +252,7 @@ export async function indexCodeChunks(chunks: CodeChunk[]): Promise<void> {
           status: action[operation].status,
           error: action[operation].error,
           operation: operations[i * 2],
-          document: operations[i * 2 + 1]
+          document: operations[i * 2 + 1] as CodeChunk
         });
       }
     });
@@ -249,8 +260,12 @@ export async function indexCodeChunks(chunks: CodeChunk[]): Promise<void> {
   }
 }
 
-export async function getClusterHealth(): Promise<any> {
+export async function getClusterHealth(): Promise<ClusterHealthResponse> {
   return client.cluster.health();
+}
+
+export interface SearchResult extends CodeChunk {
+  score: number;
 }
 
 /**
@@ -259,8 +274,12 @@ export async function getClusterHealth(): Promise<any> {
  * @param query The natural language query to search for.
  * @returns A promise that resolves to an array of search results.
  */
-export async function searchCodeChunks(query: string): Promise<any[]> {
-  const response = await client.search({
+import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
+
+// ... existing code ...
+
+export async function searchCodeChunks(query: string): Promise<SearchResult[]> {
+  const response = await client.search<CodeChunk>({
     index: indexName,
     query: {
       semantic: {
@@ -269,9 +288,9 @@ export async function searchCodeChunks(query: string): Promise<any[]> {
       },
     },
   });
-  return response.hits.hits.map((hit: any) => ({
-    ...hit._source,
-    score: hit._score,
+  return response.hits.hits.map((hit: SearchHit<CodeChunk>) => ({
+    ...(hit._source as CodeChunk),
+    score: hit._score ?? 0,
   }));
 }
 
@@ -284,8 +303,42 @@ export async function searchCodeChunks(query: string): Promise<any[]> {
  * @param query The Elasticsearch query to use for the search.
  * @returns A promise that resolves to a record of file paths to symbol info.
  */
+interface FileAggregation {
+  files: {
+    buckets: {
+      key: string;
+      symbols: {
+        names: {
+          buckets: {
+            key: string;
+            kind: {
+              buckets: {
+                key: string;
+              }[];
+            };
+            line: {
+              buckets: {
+                key: number;
+              }[];
+            };
+          }[];
+        };
+      };
+    }[];
+  };
+}
+
+/**
+ * Aggregates symbols by file path.
+ *
+ * This function is used by the `symbol_analysis` tool to find all the symbols
+ * in a set of files that match a given query.
+ *
+ * @param query The Elasticsearch query to use for the search.
+ * @returns A promise that resolves to a record of file paths to symbol info.
+ */
 export async function aggregateBySymbols(query: QueryDslQueryContainer): Promise<Record<string, SymbolInfo[]>> {
-  const response = await client.search({
+  const response = await client.search<unknown, FileAggregation>({
     index: indexName,
     query,
     aggs: {
@@ -330,10 +383,10 @@ export async function aggregateBySymbols(query: QueryDslQueryContainer): Promise
 
   const results: Record<string, SymbolInfo[]> = {};
   if (response.aggregations) {
-    const files = response.aggregations.files as any;
-    for (const bucket of files.buckets) {
+    const files = response.aggregations;
+    for (const bucket of files.files.buckets) {
       const filePath = bucket.key;
-      const symbols: SymbolInfo[] = bucket.symbols.names.buckets.map((b: any) => ({
+      const symbols: SymbolInfo[] = bucket.symbols.names.buckets.map(b => ({
         name: b.key,
         kind: b.kind.buckets[0].key,
         line: b.line.buckets[0].key,
