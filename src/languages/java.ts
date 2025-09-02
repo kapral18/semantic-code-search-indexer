@@ -29,6 +29,20 @@ export const javaConfig: LanguageConfiguration = {
       (method_declaration) @method
     ) @method_with_doc
     `,
+    `
+    (
+      (block_comment)+ @doc
+      .
+      (local_variable_declaration) @variable
+    ) @variable_with_doc
+    `,
+    `
+    (
+      (block_comment)+ @doc
+      .
+      (field_declaration) @variable
+    ) @variable_with_doc
+    `,
   ],
   importQueries: [
     '(import_declaration (scoped_identifier (identifier) @import.symbol) @import.path)',
@@ -36,5 +50,6 @@ export const javaConfig: LanguageConfiguration = {
   symbolQueries: [
     '(class_declaration name: (identifier) @class.name)',
     '(method_declaration name: (identifier) @method.name)',
+    '(variable_declarator (identifier) @variable.name)',
   ],
 };

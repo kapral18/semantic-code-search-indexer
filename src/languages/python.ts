@@ -29,6 +29,13 @@ export const pythonConfig: LanguageConfiguration = {
       (class_definition) @class
     ) @class_with_doc
     `,
+    `
+    (
+      (comment)+ @doc
+      .
+      (expression_statement (assignment)) @variable
+    ) @variable_with_doc
+    `,
   ],
   importQueries: [
     '(import_statement name: (dotted_name) @import.path)',
@@ -38,5 +45,6 @@ export const pythonConfig: LanguageConfiguration = {
   symbolQueries: [
     '(class_definition name: (identifier) @class.name)',
     '(function_definition name: (identifier) @function.name)',
+    '(expression_statement (assignment left: (identifier) @variable.name))',
   ],
 };

@@ -17,6 +17,7 @@ export const javascript: LanguageConfiguration = {
     '(export_statement) @export',
     '(call_expression) @call',
     '(comment) @comment',
+    '(function_declaration) @function',
     `
     (
       (comment)+ @doc

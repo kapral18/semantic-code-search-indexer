@@ -36,6 +36,13 @@ export const goConfig: LanguageConfiguration = {
       (method_declaration) @method
     ) @method_with_doc
     `,
+    `
+    (
+      (comment)+ @doc
+      .
+      (var_declaration) @variable
+    ) @variable_with_doc
+    `,
   ],
   importQueries: [
     '(import_spec path: (interpreted_string_literal) @import.path)',
@@ -44,5 +51,6 @@ export const goConfig: LanguageConfiguration = {
     '(function_declaration name: (identifier) @function.name)',
     '(method_declaration name: (field_identifier) @method.name)',
     '(type_spec name: (type_identifier) @type.name)',
+    '(var_spec name: (identifier) @variable.name)',
   ],
 };
