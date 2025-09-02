@@ -203,6 +203,209 @@ type MyType struct {
 ]
 `;
 
+exports[`LanguageParser should parse JSON fixtures correctly 1`] = `
+[
+  {
+    "chunk_hash": "a86f70f8a826946587f1c6650aac5dc9e5fe3248b3fec4df63de542dae1ec101",
+    "content": ""name": "code-indexer"",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"name": "code-indexer"",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "a5d89d8886c7752e87130d054c334f5b7d2093bf87d79b97fdae698f93b68572",
+    "content": ""version": "1.0.0"",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"version": "1.0.0"",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "d2aac5c613ce259bff6c5cfa37951709d0fd2d26abc250fb78dd88f361453404",
+    "content": ""description": "A tool to index codebases for semantic search."",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"description": "A tool to index codebases for semantic search."",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "8f19ff9937b442231ad51d9e1a6f4aa99d6a06e64b32981f5ed38765ccf78bd1",
+    "content": ""main": "dist/index.js"",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"main": "dist/index.js"",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "dd17b62e5de1d9ac864a9919dae14af2b7fe4304977bf8342b8585d1faa47c83",
+    "content": ""scripts": {
+  "start": "ts-node src/index.ts",
+  "build": "tsc",
+  "test": "jest"
+}",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"scripts": {
+  "start": "ts-node src/index.ts",
+  "build": "tsc",
+  "test": "jest"
+}",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "8f3b64fbccd4de2b7584b9cdc9dbb968cc0dd634aef7aa638c9a004e2f98101a",
+    "content": ""keywords": [
+  "code",
+  "indexer",
+  "semantic",
+  "search"
+]",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"keywords": [
+  "code",
+  "indexer",
+  "semantic",
+  "search"
+]",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "cc51b18bd5fb4bae902f4c54f4d05f2eefcf3b6484f014da5828bc1674db846c",
+    "content": ""author": "Your Name"",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"author": "Your Name"",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "d1ee8fdbe276cdb9fde2b64acd3524f3d452b9bfdcf33b5bf87e1779ebb5468b",
+    "content": ""license": "ISC"",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"license": "ISC"",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "3937689e831ff1838e2f22a9b1a2fd47ef2a9047219f35a639a1f60987e70108",
+    "content": ""dependencies": {
+  "elasticsearch": "^16.7.2",
+  "glob": "^7.2.0",
+  "tree-sitter-javascript": "^0.19.0"
+}",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"dependencies": {
+  "elasticsearch": "^16.7.2",
+  "glob": "^7.2.0",
+  "tree-sitter-javascript": "^0.19.0"
+}",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "90365c9c9b8134f4ff570e3636d349bfc38f060b19217fd2ed1a9a022fa6c443",
+    "content": ""devDependencies": {
+  "@types/jest": "^27.0.3",
+  "jest": "^27.4.5",
+  "ts-jest": "^27.1.2",
+  "ts-node": "^10.4.0",
+  "typescript": "^4.5.4"
+}",
+    "created_at": "[TIMESTAMP]",
+    "endLine": 1,
+    "filePath": "tests/fixtures/json.json",
+    "git_branch": "main",
+    "git_file_hash": "4ad6f3dbdbc9446975f8757d8116a5ab3b631142",
+    "language": "json",
+    "semantic_text": "filePath: tests/fixtures/json.json
+
+"devDependencies": {
+  "@types/jest": "^27.0.3",
+  "jest": "^27.4.5",
+  "ts-jest": "^27.1.2",
+  "ts-node": "^10.4.0",
+  "typescript": "^4.5.4"
+}",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+]
+`;
+
 exports[`LanguageParser should parse Java fixtures correctly 1`] = `
 [
   {

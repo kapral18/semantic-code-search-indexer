@@ -6,6 +6,7 @@ import { yamlConfig } from './yaml';
 import { javaConfig } from './java';
 import { goConfig } from './go';
 import { pythonConfig } from './python';
+import { jsonConfig } from './json';
 
 export const languageConfigurations = {
   typescript,
@@ -15,4 +16,5 @@ export const languageConfigurations = {
   java: javaConfig,
   go: goConfig,
   python: pythonConfig,
+  json: jsonConfig,
 };

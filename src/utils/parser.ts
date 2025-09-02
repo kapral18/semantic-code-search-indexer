@@ -25,7 +25,7 @@ export class LanguageParser {
   constructor() {
     this.languages = new Map();
     this.fileSuffixMap = new Map();
-    const languageNames = (process.env.SEMANTIC_CODE_INDEXER_LANGUAGES || 'typescript,javascript,markdown,yaml,java,go,python').split(',');
+    const languageNames = (process.env.SEMANTIC_CODE_INDEXER_LANGUAGES || 'typescript,javascript,markdown,yaml,java,go,python,json').split(',');
     for (const name of languageNames) {
       const config = (languageConfigurations as { [key: string]: LanguageConfiguration })[name.trim()];
       if (config) {
@@ -55,6 +55,9 @@ export class LanguageParser {
       }
       if (langConfig.name === 'yaml') {
         return this.parseYaml(filePath, gitBranch, relativePath);
+      }
+      if (langConfig.name === 'json') {
+        return this.parseJson(filePath, gitBranch, relativePath);
       }
     }
 
@@ -127,6 +130,41 @@ export class LanguageParser {
         });
       }
     });
+    return allChunks;
+  }
+
+  private parseJson(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
+    const now = new Date().toISOString();
+    const content = fs.readFileSync(filePath, 'utf8');
+    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
+    const allChunks: CodeChunk[] = [];
+    try {
+      const json = JSON.parse(content);
+      for (const key in json) {
+        const value = JSON.stringify(json[key], null, 2);
+        const chunkContent = `"${key}": ${value}`;
+        const chunkHash = createHash('sha256').update(chunkContent).digest('hex');
+        const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
+          type: 'doc',
+          language: 'json',
+          filePath: relativePath,
+          git_file_hash: gitFileHash,
+          git_branch: gitBranch,
+          chunk_hash: chunkHash,
+          content: chunkContent,
+          startLine: 1,
+          endLine: 1,
+          created_at: now,
+          updated_at: now,
+        };
+        allChunks.push({
+          ...baseChunk,
+          semantic_text: this.prepareSemanticText(baseChunk),
+        } as CodeChunk);
+      }
+    } catch (error) {
+      console.error(`Failed to parse JSON file: ${filePath}`, error);
+    }
     return allChunks;
   }
 

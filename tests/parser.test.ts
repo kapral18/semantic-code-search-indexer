@@ -8,7 +8,7 @@ describe('LanguageParser', () => {
   let parser: LanguageParser;
 
   beforeAll(() => {
-    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python';
+    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python,json';
     parser = new LanguageParser();
   });
 
@@ -70,6 +70,12 @@ describe('LanguageParser', () => {
   it('should parse Python fixtures correctly', () => {
     const filePath = path.resolve(__dirname, 'fixtures/python.py');
     const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/python.py');
+    expect(cleanTimestamps(chunks)).toMatchSnapshot();
+  });
+
+  it('should parse JSON fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/json.json');
+    const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/json.json');
     expect(cleanTimestamps(chunks)).toMatchSnapshot();
   });
 });
