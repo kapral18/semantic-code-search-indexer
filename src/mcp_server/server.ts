@@ -12,6 +12,10 @@ import { listSymbolsByQuery, listSymbolsByQuerySchema } from './tools/list_symbo
 import { symbolAnalysis, symbolAnalysisSchema } from './tools/symbol_analysis';
 import { readFile, readFileSchema } from './tools/read_file';
 import { documentSymbols, documentSymbolsSchema } from './tools/document_symbols';
+import {
+  createStartChainOfInvestigationHandler,
+  startChainOfInvestigationSchema,
+} from './tools/chain_of_investigation';
 
 /**
  * The main MCP server class.
@@ -82,6 +86,26 @@ export class McpServer {
         inputSchema: documentSymbolsSchema.shape,
       },
       documentSymbols
+    );
+
+    const chainOfInvestigationMarkdown = fs.readFileSync(
+      path.join(__dirname, 'tools/chain_of_investigation.md'),
+      'utf-8'
+    );
+
+    const descriptionMatch = chainOfInvestigationMarkdown.match(/## Description\n\n(.*?)(?=\n##|$)/s);
+    const description = descriptionMatch ? descriptionMatch[1].trim() : '';
+
+    const workflowMatch = chainOfInvestigationMarkdown.match(/## Workflow\n\n(.*?)(?=\n##|$)/s);
+    const workflow = workflowMatch ? workflowMatch[1].trim() : '';
+
+    this.server.registerPrompt(
+      'StartInvestigation',
+      {
+        description,
+        argsSchema: startChainOfInvestigationSchema.shape,
+      },
+      createStartChainOfInvestigationHandler(workflow)
     );
   }
 
