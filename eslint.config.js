@@ -1,9 +1,9 @@
-import globals from "globals";
-import tseslint from "typescript-eslint";
+const globals = require("globals");
+const tseslint = require("typescript-eslint");
 
-export default [
+module.exports = [
   {
-    ignores: ["dist/"],
+    ignores: ["dist/", ".repos/", "eslint.config.js", "tests/fixtures/"],
   },
   {
     languageOptions: {
