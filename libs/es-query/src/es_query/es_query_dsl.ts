@@ -17,5 +17,5 @@ export interface DslQueryStringQuery {
 }
 
 /** @internal */
-export const isEsQueryString = (query: any): query is DslQueryStringQuery =>
+export const isEsQueryString = (query: unknown): query is DslQueryStringQuery =>
   has(query, 'query_string.query');
