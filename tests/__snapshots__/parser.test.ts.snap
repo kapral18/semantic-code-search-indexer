@@ -49,13 +49,7 @@ import "fmt"",
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imports": [
-      {
-        "path": "fmt",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "comment",
     "language": "go",
     "semantic_text": "filePath: tests/fixtures/go.go
@@ -89,13 +83,7 @@ kind: comment
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imports": [
-      {
-        "path": "fmt",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "function_declaration",
     "language": "go",
     "semantic_text": "filePath: tests/fixtures/go.go
@@ -129,13 +117,7 @@ func Hello() {
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imports": [
-      {
-        "path": "fmt",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "call_expression",
     "language": "go",
     "semantic_text": "filePath: tests/fixtures/go.go
@@ -169,13 +151,7 @@ fmt.Println("Hello, Go!")",
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
     "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
-    "imports": [
-      {
-        "path": "fmt",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "type_declaration",
     "language": "go",
     "semantic_text": "filePath: tests/fixtures/go.go
@@ -464,15 +440,7 @@ import java.util.List;",
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imports": [
-      {
-        "path": "java.util.List",
-        "symbols": [
-          "List",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "class_declaration",
     "language": "java",
     "semantic_text": "filePath: tests/fixtures/java.java
@@ -513,15 +481,7 @@ class MyClass {
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imports": [
-      {
-        "path": "java.util.List",
-        "symbols": [
-          "List",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "block_comment",
     "language": "java",
     "semantic_text": "filePath: tests/fixtures/java.java
@@ -558,15 +518,7 @@ containerPath: MyClass
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imports": [
-      {
-        "path": "java.util.List",
-        "symbols": [
-          "List",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "method_declaration",
     "language": "java",
     "semantic_text": "filePath: tests/fixtures/java.java
@@ -601,15 +553,7 @@ public void myMethod() {
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imports": [
-      {
-        "path": "java.util.List",
-        "symbols": [
-          "List",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "expression_statement",
     "language": "java",
     "semantic_text": "filePath: tests/fixtures/java.java
@@ -641,15 +585,7 @@ System.out.println("Hello, Java!");",
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
     "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
-    "imports": [
-      {
-        "path": "java.util.List",
-        "symbols": [
-          "List",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "method_invocation",
     "language": "java",
     "semantic_text": "filePath: tests/fixtures/java.java
@@ -686,15 +622,7 @@ exports[`LanguageParser should parse JavaScript fixtures correctly 1`] = `
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "comment",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -744,6 +672,11 @@ kind: comment
         ],
         "type": "module",
       },
+      {
+        "path": "b",
+        "symbols": [],
+        "type": "module",
+      },
     ],
     "kind": "import_statement",
     "language": "javascript",
@@ -788,15 +721,7 @@ import { a } from 'b';",
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "comment",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -842,15 +767,7 @@ kind: comment
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "function_declaration",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -894,15 +811,7 @@ function hello() {
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "expression_statement",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -944,15 +853,7 @@ console.log('Hello, world!');",
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "call_expression",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -998,15 +899,7 @@ console.log('Hello, world!')",
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "class_declaration",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -1054,15 +947,7 @@ class MyClass {
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "method_definition",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -1107,15 +992,7 @@ myMethod() {
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "return_statement",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -1157,15 +1034,7 @@ return 1;",
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
     "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "lexical_declaration",
     "language": "javascript",
     "semantic_text": "filePath: tests/fixtures/javascript.js
@@ -1328,13 +1197,7 @@ import os",
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imports": [
-      {
-        "path": "os",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "class_definition",
     "language": "python",
     "semantic_text": "filePath: tests/fixtures/python.py
@@ -1374,13 +1237,7 @@ class MyClass:
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imports": [
-      {
-        "path": "os",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "function_definition",
     "language": "python",
     "semantic_text": "filePath: tests/fixtures/python.py
@@ -1418,13 +1275,7 @@ def my_method(self):
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imports": [
-      {
-        "path": "os",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "call",
     "language": "python",
     "semantic_text": "filePath: tests/fixtures/python.py
@@ -1463,13 +1314,7 @@ print("Hello, Python!")",
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imports": [
-      {
-        "path": "os",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "function_definition",
     "language": "python",
     "semantic_text": "filePath: tests/fixtures/python.py
@@ -1508,13 +1353,7 @@ def my_function():
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
     "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
-    "imports": [
-      {
-        "path": "os",
-        "symbols": [],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "expression_statement",
     "language": "python",
     "semantic_text": "filePath: tests/fixtures/python.py
@@ -1556,15 +1395,7 @@ exports[`LanguageParser should parse TypeScript fixtures correctly 1`] = `
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "comment",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts
@@ -1624,6 +1455,11 @@ kind: comment
         ],
         "type": "module",
       },
+      {
+        "path": "b",
+        "symbols": [],
+        "type": "module",
+      },
     ],
     "kind": "import_statement",
     "language": "typescript",
@@ -1678,15 +1514,7 @@ import { a } from 'b';",
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "comment",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts
@@ -1742,15 +1570,7 @@ kind: comment
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "function_declaration",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts
@@ -1808,15 +1628,7 @@ function hello() {
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "class_declaration",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts
@@ -1874,15 +1686,7 @@ class MyClass {
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "method_definition",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts
@@ -1937,15 +1741,7 @@ myMethod() {
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "lexical_declaration",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts
@@ -1999,15 +1795,7 @@ const myVar = () => {};",
     "filePath": "tests/fixtures/typescript.ts",
     "git_branch": "main",
     "git_file_hash": "0e2943e2881dd83ae189d91d413ddcc47ea685ff",
-    "imports": [
-      {
-        "path": "b",
-        "symbols": [
-          "a",
-        ],
-        "type": "module",
-      },
-    ],
+    "imports": [],
     "kind": "interface_declaration",
     "language": "typescript",
     "semantic_text": "filePath: tests/fixtures/typescript.ts

@@ -183,7 +183,7 @@ export class LanguageParser {
     fs.writeFileSync('matches.json', JSON.stringify(matches, null, 2));
     const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
 
-    let imports: { path: string; type: 'module' | 'file'; symbols?: string[] }[] = [];
+    const importsByLine: { [line: number]: { path: string; type: 'module' | 'file'; symbols?: string[] }[] } = {};
     if (langConfig.importQueries) {
       const importQuery = new Query(langConfig.parser, langConfig.importQueries.join('\n'));
       const importMatches = importQuery.matches(tree.rootNode);
@@ -191,51 +191,33 @@ export class LanguageParser {
         m.captures.some(c => c.name.startsWith('import'))
       );
 
-      const importsByPath: Record<
-        string,
-        { path: string; type: 'module' | 'file'; symbols: string[] }
-      > = {};
       for (const match of importNodes) {
         let importPath = '';
-        let symbol = '';
+        const symbols: string[] = [];
         for (const capture of match.captures) {
           if (capture.name === 'import.path') {
             importPath = capture.node.text.replace(/['"]/g, '');
           } else if (capture.name === 'import.symbol') {
-            symbol = capture.node.text;
+            symbols.push(capture.node.text);
           }
         }
 
         if (importPath) {
-          if (!importsByPath[importPath]) {
-            if (importPath.startsWith('.')) {
-              const resolvedPath = path.resolve(
-                path.dirname(filePath),
-                importPath
-              );
-              const gitRoot = execSync('git rev-parse --show-toplevel')
-                .toString()
-                .trim();
-              const projectRelativePath = path.relative(gitRoot, resolvedPath);
-              importsByPath[importPath] = {
-                path: projectRelativePath,
-                type: 'file' as const,
-                symbols: [],
-              };
-            } else {
-              importsByPath[importPath] = {
-                path: importPath,
-                type: 'module' as const,
-                symbols: [],
-              };
-            }
+          const line = match.captures[0].node.startPosition.row + 1;
+          if (!importsByLine[line]) {
+            importsByLine[line] = [];
           }
-          if (symbol && !importsByPath[importPath].symbols.includes(symbol)) {
-            importsByPath[importPath].symbols.push(symbol);
+
+          let type: 'module' | 'file' = 'module';
+          if (importPath.startsWith('.')) {
+            const resolvedPath = path.resolve(path.dirname(filePath), importPath);
+            const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
+            importPath = path.relative(gitRoot, resolvedPath);
+            type = 'file';
           }
+          importsByLine[line].push({ path: importPath, type, symbols });
         }
       }
-      imports = Object.values(importsByPath);
     }
 
     let symbols: SymbolInfo[] = [];
@@ -279,19 +261,23 @@ export class LanguageParser {
         }
       }
 
+      const startLine = node.startPosition.row + 1;
+      const endLine = node.endPosition.row + 1;
+      const chunkImports = importsByLine[startLine] || [];
+
       const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
         type: 'code',
         language: langConfig.name,
         kind: node.type,
-        imports,
+        imports: chunkImports,
         symbols,
         containerPath,
         filePath: relativePath,
         git_file_hash: gitFileHash,
         git_branch: gitBranch,
         chunk_hash: chunkHash,
-        startLine: node.startPosition.row + 1,
-        endLine: node.endPosition.row + 1,
+        startLine,
+        endLine,
         content: content,
         created_at: now,
         updated_at: now,
