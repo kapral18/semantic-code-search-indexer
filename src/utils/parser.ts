@@ -12,6 +12,9 @@ const { Query } = Parser;
 export interface LanguageConfiguration {
   name: string;
   fileSuffixes: string[];
+  // The tree-sitter language packages (e.g., tree-sitter-typescript) do not share a common, importable type
+  // for the language parser object, making it impractical to type this map statically.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parser: any; // This can be a tree-sitter parser or null for custom parsers
   queries: string[];
   importQueries?: string[];
@@ -72,7 +75,7 @@ export class LanguageParser {
 
     return chunks
       .filter(chunk => /[a-zA-Z0-9]/.test(chunk)) // Filter out chunks with no alphanumeric characters
-      .map((chunk, index) => {
+      .map(chunk => {
         const startLine = (content.substring(0, content.indexOf(chunk)).match(/\n/g) || []).length + 1;
         const endLine = startLine + (chunk.match(/\n/g) || []).length;
         const chunkHash = createHash('sha256').update(chunk).digest('hex');

@@ -43,8 +43,12 @@ export async function incrementalIndex(directory: string) {
   try {
     execSync(`git pull origin ${gitBranch}`, { cwd: directory, stdio: 'pipe' });
     logger.info('Pull complete.');
-  } catch (error: any) {
-    logger.error('Failed to pull latest changes.', { error: error.message });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger.error('Failed to pull latest changes.', { error: error.message });
+    } else {
+      logger.error('Failed to pull latest changes with an unknown error.', { error });
+    }
     return;
   }
 

@@ -13,6 +13,12 @@ export const documentSymbolsSchema = z.object({
 
 export type DocumentSymbolsParams = z.infer<typeof documentSymbolsSchema>;
 
+interface Symbol {
+  name: string;
+  kind: string;
+  line: number;
+}
+
 /**
  * Analyzes a file to identify the key symbols that would most benefit from
  * documentation.
@@ -34,12 +40,12 @@ export async function documentSymbols(params: DocumentSymbolsParams): Promise<Ca
   const symbolsForFile = allSymbols[filePath] || [];
 
   // 3. Identify the important symbols
-  const importantSymbols = symbolsForFile.filter((symbol: any) => {
+  const importantSymbols = symbolsForFile.filter((symbol: Symbol) => {
     return reconstructedContent.includes(symbol.name);
   });
 
   // 4. Format the results
-  const formattedSymbols = importantSymbols.map((symbol: any) => ({
+  const formattedSymbols = importantSymbols.map((symbol: Symbol) => ({
     name: symbol.name,
     kind: symbol.kind,
     line: symbol.line,

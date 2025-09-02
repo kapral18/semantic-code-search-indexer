@@ -65,6 +65,39 @@ export type SymbolAnalysisParams = z.infer<typeof symbolAnalysisSchema>;
  * @returns {Promise<CallToolResult>} A promise that resolves to a
  * `CallToolResult` object containing the symbol analysis report.
  */
+interface SymbolAggregation {
+  files: {
+    buckets: {
+      key: string;
+      languages: {
+        buckets: {
+          key: string;
+        }[];
+      };
+      kinds: {
+        buckets: {
+          key: string;
+          startLines: {
+            buckets: {
+              key: number;
+            }[];
+          };
+        }[];
+      };
+    }[];
+  };
+}
+
+/**
+ * Analyzes a symbol and returns a report of its definitions, call sites, and references.
+ *
+ * This function uses an Elasticsearch aggregation to gather information about a
+ * symbol from the index.
+ *
+ * @param {SymbolAnalysisParams} params - The parameters for the function.
+ * @returns {Promise<CallToolResult>} A promise that resolves to a
+ * `CallToolResult` object containing the symbol analysis report.
+ */
 export async function symbolAnalysis(params: SymbolAnalysisParams): Promise<CallToolResult> {
   const { symbolName } = params;
   const kql = `content: "${symbolName}"`;
@@ -72,7 +105,7 @@ export async function symbolAnalysis(params: SymbolAnalysisParams): Promise<Call
   const ast = fromKueryExpression(kql);
   const dsl = toElasticsearchQuery(ast);
 
-  const response = await client.search({
+  const response = await client.search<unknown, SymbolAggregation>({
     index: elasticsearchConfig.index,
     query: dsl,
     aggs: {
@@ -117,13 +150,13 @@ export async function symbolAnalysis(params: SymbolAnalysisParams): Promise<Call
   };
 
   if (response.aggregations) {
-    const files = response.aggregations.files as any;
-    for (const bucket of files.buckets) {
+    const files = response.aggregations;
+    for (const bucket of files.files.buckets) {
       const filePath = bucket.key;
-      const languages = bucket.languages.buckets.map((b: any) => b.key);
-      const kinds: KindInfo[] = bucket.kinds.buckets.map((b: any) => ({
+      const languages = bucket.languages.buckets.map(b => b.key);
+      const kinds: KindInfo[] = bucket.kinds.buckets.map(b => ({
         kind: b.key,
-        startLines: b.startLines.buckets.map((sl: any) => sl.key),
+        startLines: b.startLines.buckets.map(sl => sl.key),
       }));
 
       const fileInfo: FileInfo = {

@@ -3,7 +3,7 @@ const tseslint = require("typescript-eslint");
 
 module.exports = [
   {
-    ignores: ["dist/", ".repos/", "eslint.config.js", "tests/fixtures/"],
+    ignores: ["dist/", ".repos/", "eslint.config.js", "tests/fixtures/", "libs/es-query/"],
   },
   {
     languageOptions: {

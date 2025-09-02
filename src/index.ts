@@ -7,9 +7,8 @@ async function main() {
   const args = process.argv.slice(3);
 
   const clean = args.includes('--clean');
-  const logMode = args.includes('--log-mode');
   const aggregateSymbols = args.includes('--aggregate-symbols');
-  const argument = args.filter(arg => arg !== '--clean' && arg !== '--log-mode' && arg !== '--aggregate-symbols').join(' ');
+  const argument = args.filter(arg => arg !== '--clean' && arg !== '--aggregate-symbols').join(' ');
 
   if (command === 'index') {
     await index(argument || '.', clean);

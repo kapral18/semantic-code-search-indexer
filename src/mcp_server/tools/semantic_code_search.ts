@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { fromKueryExpression, toElasticsearchQuery } from '../../../libs/es-query';
-import { searchCodeChunks } from '../../utils/elasticsearch';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
 

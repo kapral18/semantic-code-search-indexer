@@ -250,7 +250,11 @@ export async function indexCodeChunks(chunks: CodeChunk[]): Promise<void> {
 
   if (bulkResponse.errors) {
     const erroredDocuments: ErroredDocument[] = [];
-    bulkResponse.items.forEach((action, i) => {
+    // The `action` object from the Elasticsearch bulk response has a dynamic structure
+      // (e.g., { index: { ... } }, { create: { ... } }) which is difficult to type
+      // statically without overly complex type guards.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      bulkResponse.items.forEach((action: any, i: number) => {
       const operation = Object.keys(action)[0];
       if (action[operation].error) {
         erroredDocuments.push({

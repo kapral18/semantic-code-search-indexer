@@ -15,7 +15,6 @@ import { Worker } from 'worker_threads';
 import PQueue from 'p-queue';
 import { execSync } from 'child_process';
 import fs from 'fs';
-// @ts-ignore
 import ignore from 'ignore';
 import { logger } from '../utils/logger';
 

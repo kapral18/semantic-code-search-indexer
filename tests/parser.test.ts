@@ -1,5 +1,6 @@
 // tests/parser.test.ts
 import { LanguageParser } from '../src/utils/parser';
+import { CodeChunk } from '../src/utils/elasticsearch';
 import path from 'path';
 
 const MOCK_TIMESTAMP = '[TIMESTAMP]';
@@ -12,7 +13,7 @@ describe('LanguageParser', () => {
     parser = new LanguageParser();
   });
 
-  const cleanTimestamps = (chunks: any[]) => {
+  const cleanTimestamps = (chunks: CodeChunk[]) => {
     return chunks.map(chunk => ({
       ...chunk,
       created_at: MOCK_TIMESTAMP,
