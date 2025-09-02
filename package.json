@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "postbuild": "mkdir -p dist/libs/es-query/src/kuery/grammar && cp libs/es-query/src/kuery/grammar/grammar.js dist/libs/es-query/src/kuery/grammar/grammar.js && mkdir -p dist/src/mcp_server/tools && cp src/mcp_server/tools/*.md dist/src/mcp_server/tools/",
+    "postbuild": "mkdir -p dist/libs/es-query/src/kuery/grammar && cp libs/es-query/src/kuery/grammar/grammar.js dist/libs/es-query/src/kuery/grammar/grammar.js && mkdir -p dist/src/mcp_server/prompts && cp src/mcp_server/prompts/*.md dist/src/mcp_server/prompts/",
     "build:kql": "npx peggy -o libs/es-query/src/kuery/grammar/grammar.js libs/es-query/src/kuery/grammar/grammar.peggy",
     "lint": "eslint . --ext .ts",
     "index": "NODE_OPTIONS=--max-old-space-size=8192 ts-node src/index.ts index",
