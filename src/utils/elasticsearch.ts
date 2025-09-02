@@ -1,6 +1,7 @@
 import { Client, ClientOptions } from '@elastic/elasticsearch';
 import {
   AggregationsAggregate,
+  BulkResponse,
   ClusterHealthResponse,
   QueryDslQueryContainer,
 } from '@elastic/elasticsearch/lib/api/types';
@@ -172,7 +173,11 @@ export async function getLastIndexedCommit(branch: string): Promise<string | nul
     });
     return response._source?.commit_hash ?? null;
   } catch (error: unknown) {
-    if (error instanceof Error && 'meta' in error && (error.meta as any).statusCode === 404) {
+    if (
+      error instanceof Error &&
+      'meta' in error &&
+      (error.meta as { statusCode?: number }).statusCode === 404
+    ) {
       return null;
     }
     throw error;
@@ -221,8 +226,10 @@ export interface CodeChunk {
 
 interface ErroredDocument {
   status: number;
+  // The structure of the error object from the Elasticsearch client can be complex and varied, making it difficult to type statically.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error: any;
-  operation: any;
+  operation: { index: { _index: string } };
   document: CodeChunk;
 }
 
@@ -251,7 +258,7 @@ export async function indexCodeChunks(chunks: CodeChunk[]): Promise<void> {
         erroredDocuments.push({
           status: action[operation].status,
           error: action[operation].error,
-          operation: operations[i * 2],
+          operation: operations[i * 2] as { index: { _index: string } },
           document: operations[i * 2 + 1] as CodeChunk
         });
       }
