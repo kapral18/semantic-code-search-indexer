@@ -22,10 +22,10 @@ Find directories that contain important package markers:
   "query": {
     "bool": {
       "should": [
-        { "term": { "filePath": "README.md" } },
-        { "term": { "filePath": "package.json" } },
-        { "term": { "filePath": "__init__.py" } },
-        { "term": { "filePath": "setup.py" } }
+        { "wildcard": { "filePath": "*README.md" } },
+        { "wildcard": { "filePath": "*package.json" } },
+        { "wildcard": { "filePath": "*__init__.py" } },
+        { "wildcard": { "filePath": "*setup.py" } }
       ]
     }
   },
