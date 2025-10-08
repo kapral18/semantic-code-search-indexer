@@ -20,7 +20,7 @@ function findProjectRoot(startPath: string): string {
 const projectRoot = findProjectRoot(__dirname);
 
 export const elasticsearchConfig = {
-  endpoint: process.env.ELASTICSEARCH_ENDPOINT,
+  endpoint: process.env.ELASTICSEARCH_ENDPOINT || process.env.ELASTICSEARCH_HOST,
   cloudId: process.env.ELASTICSEARCH_CLOUD_ID,
   username: process.env.ELASTICSEARCH_USER,
   password: process.env.ELASTICSEARCH_PASSWORD,
