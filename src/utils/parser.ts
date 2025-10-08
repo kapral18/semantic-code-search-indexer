@@ -23,13 +23,14 @@ function extractDirectoryInfo(filePath: string): {
 } {
   const dirPath = path.dirname(filePath);
   const dirName = dirPath === '.' ? '' : path.basename(dirPath);
-  
-  // Calculate depth by counting path separators
-  // '.' or '' = depth 0, 'src' = depth 1, 'src/utils' = depth 2, etc.
-  const depth = dirPath === '.' || dirPath === '' ? 0 : dirPath.split(path.sep).length;
-  
+
+  // Normalize separators to forward slashes for consistent depth calculation
+  const normalizedDirPath = dirPath === '.' ? '' : dirPath.replace(/\\/g, '/');
+  // Calculate depth by counting forward slashes
+  const depth = normalizedDirPath === '' ? 0 : normalizedDirPath.split('/').length;
+
   return {
-    directoryPath: dirPath === '.' ? '' : dirPath,
+    directoryPath: normalizedDirPath,
     directoryName: dirName,
     directoryDepth: depth,
   };
