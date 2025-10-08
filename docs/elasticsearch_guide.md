@@ -54,7 +54,7 @@ Here is the mapping for the `code-chunks` index:
       "imports": { "type": "keyword" },
       "containerPath": { "type": "text" },
       "filePath": { "type": "keyword" },
-      "directoryPath": { "type": "keyword" },
+      "directoryPath": { "type": "keyword", "eager_global_ordinals": true },
       "directoryName": { "type": "keyword" },
       "directoryDepth": { "type": "integer" },
       "git_file_hash": { "type": "keyword" },
@@ -81,7 +81,7 @@ Here is the mapping for the `code-chunks` index:
 | `imports` | `keyword` | A list of imported modules or libraries. |
 | `containerPath` | `text` | The path of the containing symbol (e.g., class name for a method). |
 | `filePath` | `keyword` | The repository-relative path to the source file. |
-| `directoryPath` | `keyword` | The directory path containing the file (e.g., 'src/utils'). |
+| `directoryPath` | `keyword` | The directory path containing the file (e.g., 'src/utils'). Optimized with eager global ordinals for fast aggregations. |
 | `directoryName` | `keyword` | The name of the immediate parent directory. |
 | `directoryDepth` | `integer` | The depth of the directory in the file tree (0 for root-level files). |
 | `git_file_hash` | `keyword` | The Git hash of the file content. |

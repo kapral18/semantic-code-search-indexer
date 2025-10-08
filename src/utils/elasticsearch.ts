@@ -114,7 +114,7 @@ export async function createIndex(index?: string): Promise<void> {
           },
           containerPath: { type: 'text' },
           filePath: { type: 'keyword' },
-          directoryPath: { type: 'keyword' },
+          directoryPath: { type: 'keyword', eager_global_ordinals: true },
           directoryName: { type: 'keyword' },
           directoryDepth: { type: 'integer' },
           git_file_hash: { type: 'keyword' },
