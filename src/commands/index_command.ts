@@ -15,7 +15,7 @@ import PQueue from 'p-queue';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import ignore from 'ignore';
-import { logger, createLogger } from '../utils/logger';
+import { createLogger } from '../utils/logger';
 import { IQueue } from '../utils/queue';
 import { SqliteQueue } from '../utils/sqlite_queue';
 

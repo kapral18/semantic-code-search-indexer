@@ -2,6 +2,7 @@ import { Client, ClientOptions } from '@elastic/elasticsearch';
 import {
   ClusterHealthResponse,
   QueryDslQueryContainer,
+  BulkOperationContainer,
 } from '@elastic/elasticsearch/lib/api/types';
 import { elasticsearchConfig, indexingConfig } from '../config';
 export { elasticsearchConfig };
@@ -243,7 +244,7 @@ export async function indexCodeChunks(chunks: CodeChunk[], index?: string): Prom
   const indexName = index || defaultIndexName;
   const operations = chunks.flatMap(doc => [{ index: { _index: indexName, _id: doc.chunk_hash } }, doc]);
 
-  const bulkOptions: { refresh: boolean; operations: any[]; pipeline?: string } = {
+  const bulkOptions: { refresh: boolean; operations: (BulkOperationContainer | CodeChunk)[]; pipeline?: string } = {
     refresh: false,
     operations,
   };
