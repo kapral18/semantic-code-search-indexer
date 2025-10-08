@@ -70,7 +70,9 @@ describe('SqliteQueue', () => {
     const dequeued = await queue.dequeue(2);
     
     expect(dequeued.length).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { created_at: _c1, updated_at: _u1, ...chunk1 } = MOCK_CHUNK_1;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { created_at: _c2, updated_at: _u2, ...chunk2 } = MOCK_CHUNK_2;
     expect(dequeued.map(d => d.document)).toEqual([MOCK_CHUNK_1, MOCK_CHUNK_2]);
   });
@@ -82,6 +84,7 @@ describe('SqliteQueue', () => {
     const dequeued = await queue.dequeue(1);
     
     expect(dequeued.length).toBe(1);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { created_at: _c1, updated_at: _u1, ...chunk1 } = MOCK_CHUNK_1;
     expect(dequeued[0].document).toEqual(MOCK_CHUNK_1);
   });

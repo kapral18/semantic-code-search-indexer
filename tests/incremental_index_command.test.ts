@@ -28,6 +28,7 @@ describe('incrementalIndex', () => {
     push: jest.fn().mockReturnThis(),
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let postedMessages: any[];
 
   beforeEach(() => {
@@ -45,12 +46,15 @@ describe('incrementalIndex', () => {
       ...workQueue,
       initialize: jest.fn(),
       close: jest.fn(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockedSimpleGit.mockReturnValue(gitInstance as any);
 
     mockedElasticsearch.getLastIndexedCommit.mockResolvedValue('dummy-commit-hash');
 
     // Mock the worker implementation
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockedWorker.mockImplementation(((path: string | URL) => {
       const worker = {
         on: jest.fn((event, cb) => {
@@ -67,7 +71,9 @@ describe('incrementalIndex', () => {
         ref: jest.fn(),
         unref: jest.fn(),
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return worker as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as any);
   });
 
@@ -89,6 +95,7 @@ describe('incrementalIndex', () => {
         pull: jest.fn().mockResolvedValue(undefined),
         diff: jest.fn().mockResolvedValue(gitDiffOutput),
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockedSimpleGit.mockReturnValue(git as any);
     mockedElasticsearch.getLastIndexedCommit.mockResolvedValue('old-commit-hash');
 

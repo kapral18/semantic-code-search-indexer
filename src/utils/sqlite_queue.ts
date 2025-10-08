@@ -4,7 +4,6 @@ import Database from 'better-sqlite3';
 import { IQueue, QueuedDocument } from './queue';
 import { CodeChunk } from './elasticsearch';
 import { logger } from './logger';
-import _ from 'lodash';
 
 export const MAX_RETRIES = 3;
 const STALE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes

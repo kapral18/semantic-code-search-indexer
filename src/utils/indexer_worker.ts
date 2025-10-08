@@ -1,5 +1,5 @@
 import { IQueue, QueuedDocument } from './queue';
-import { CodeChunk, indexCodeChunks } from './elasticsearch';
+import { indexCodeChunks } from './elasticsearch';
 import { logger as defaultLogger, createLogger } from './logger';
 import PQueue from 'p-queue';
 import { SqliteQueue } from './sqlite_queue';
