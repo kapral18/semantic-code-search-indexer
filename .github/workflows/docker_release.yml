@@ -10,7 +10,7 @@ on:
     paths:
       - "Dockerfile"
       - "src/**"
-      - ".github/workflows/release.yml"
+      - ".github/workflows/docker_release.yml"
       - "package*.json"
       - "tsconfig*.json"
   push:
@@ -19,7 +19,7 @@ on:
     paths:
       - "Dockerfile"
       - "src/**"
-      - ".github/workflows/release.yml"
+      - ".github/workflows/docker_release.yml"
       - "package*.json"
       - "tsconfig*.json"
 
