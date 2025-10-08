@@ -1,6 +1,6 @@
 // src/utils/logger.ts
 import { Client, ClientOptions } from '@elastic/elasticsearch';
-import { elasticsearchConfig, appConfig } from '../config';
+import { elasticsearchConfig } from '../config';
 import { findProjectRoot } from './find_project_root';
 import { execSync } from 'child_process';
 import os from 'os';

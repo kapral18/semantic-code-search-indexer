@@ -78,18 +78,18 @@ describe('retryFailedCommand', () => {
     const db = new Database(dbPath);
 
     // Check the previously failed documents
-    const doc1 = db.prepare('SELECT * FROM queue WHERE id = 1').get() as any;
-    expect(doc1.status).toBe('pending');
-    expect(doc1.retry_count).toBe(0);
+    const doc1 = db.prepare('SELECT * FROM queue WHERE id = 1').get() as { status: string; retry_count: number } | undefined;
+    expect(doc1?.status).toBe('pending');
+    expect(doc1?.retry_count).toBe(0);
 
-    const doc3 = db.prepare('SELECT * FROM queue WHERE id = 3').get() as any;
-    expect(doc3.status).toBe('pending');
-    expect(doc3.retry_count).toBe(0);
+    const doc3 = db.prepare('SELECT * FROM queue WHERE id = 3').get() as { status: string; retry_count: number } | undefined;
+    expect(doc3?.status).toBe('pending');
+    expect(doc3?.retry_count).toBe(0);
 
     // Check the document that was not failed
-    const doc2 = db.prepare('SELECT * FROM queue WHERE id = 2').get() as any;
-    expect(doc2.status).toBe('pending');
-    expect(doc2.retry_count).toBe(0); // Should be untouched
+    const doc2 = db.prepare('SELECT * FROM queue WHERE id = 2').get() as { status: string; retry_count: number } | undefined;
+    expect(doc2?.status).toBe('pending');
+    expect(doc2?.retry_count).toBe(0); // Should be untouched
 
     db.close();
   });

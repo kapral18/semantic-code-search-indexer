@@ -28,7 +28,7 @@ describe('incrementalIndex', () => {
     push: jest.fn().mockReturnThis(),
   };
 
-  let postedMessages: any[];
+  let postedMessages: unknown[];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -45,13 +45,14 @@ describe('incrementalIndex', () => {
       ...workQueue,
       initialize: jest.fn(),
       close: jest.fn(),
-    } as any));
-    mockedSimpleGit.mockReturnValue(gitInstance as any);
+    } as unknown as SqliteQueue));
+    mockedSimpleGit.mockReturnValue(gitInstance as unknown as ReturnType<typeof simpleGit>);
 
     mockedElasticsearch.getLastIndexedCommit.mockResolvedValue('dummy-commit-hash');
 
     // Mock the worker implementation
-    mockedWorker.mockImplementation(((path: string | URL) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mockedWorker.mockImplementation(((_path: string | URL) => {
       const worker = {
         on: jest.fn((event, cb) => {
           if (event === 'message') {
@@ -67,8 +68,8 @@ describe('incrementalIndex', () => {
         ref: jest.fn(),
         unref: jest.fn(),
       };
-      return worker as any;
-    }) as any);
+      return worker as unknown as Worker;
+    }) as unknown as typeof Worker);
   });
 
   it('should handle file renames and copies correctly', async () => {
@@ -89,7 +90,7 @@ describe('incrementalIndex', () => {
         pull: jest.fn().mockResolvedValue(undefined),
         diff: jest.fn().mockResolvedValue(gitDiffOutput),
     };
-    mockedSimpleGit.mockReturnValue(git as any);
+    mockedSimpleGit.mockReturnValue(git as unknown as ReturnType<typeof simpleGit>);
     mockedElasticsearch.getLastIndexedCommit.mockResolvedValue('old-commit-hash');
 
     await incrementalIndex('/test/repo');
