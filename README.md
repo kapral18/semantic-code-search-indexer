@@ -122,6 +122,19 @@ Starts the producer worker, which scans the repository for changes and adds them
 npm run bulk:incremental-index -- path/to/my-repo:my-repo-index --concurrency 4
 ```
 
+### `npm run bulk:reindex`
+
+Performs a full clean reindex of multiple repositories. This command combines `index --clean` and worker execution for each repository, making it ideal for when you need to completely rebuild indexes (e.g., after changing the indexing format).
+
+**Arguments:**
+- `<repo-configs...>`: A space-separated list of repository configurations in the format `"path:index[:token]"`.
+- `--concurrency <number>`: (Optional) The number of parallel workers to run per repository. Defaults to 1.
+
+**Example:**
+```bash
+npm run bulk:reindex -- .repos/kibana:kibana-index .repos/elasticsearch:es-index --concurrency 2
+```
+
 ---
 ## Private Repository Support
 
