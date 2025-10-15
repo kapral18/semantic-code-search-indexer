@@ -93,4 +93,16 @@ export const typescript: LanguageConfiguration = {
     '(new_expression constructor: (identifier) @class.instantiation)',
     '(variable_declarator value: (identifier) @variable.usage)',
   ],
+  exportQueries: [
+    '(export_statement (lexical_declaration (variable_declarator name: (identifier) @export.name)))',
+    '(export_statement (function_declaration name: (identifier) @export.name))',
+    '(export_statement (class_declaration name: (type_identifier) @export.name))',
+    '(export_statement (interface_declaration name: (type_identifier) @export.name))',
+    '(export_statement (type_alias_declaration name: (type_identifier) @export.name))',
+    '(export_statement "default" @export.default)',
+    '(export_statement (export_clause (export_specifier name: (identifier) @export.name)))',
+    '(export_statement (export_clause (export_specifier name: (identifier) alias: (identifier) @export.name)))',
+    '(export_statement "*" @export.namespace (string) @export.source)',
+    '(export_statement (export_clause) (string) @export.source)',
+  ],
 };

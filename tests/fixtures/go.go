@@ -10,3 +10,9 @@ func Hello() {
 type MyType struct {
     name string
 }
+
+const MyConst = 42
+
+func privateFunc() {
+	fmt.Println("private")
+}

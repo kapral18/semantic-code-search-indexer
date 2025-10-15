@@ -309,4 +309,151 @@ Third paragraph`;
       expect(chunks[2].endLine).toBe(5);
     });
   });
+
+  describe('Export Detection', () => {
+    it('should extract TypeScript exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/typescript.ts');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/typescript.ts');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Check that we have the expected exports
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'myVar', type: 'named' }),
+          expect.objectContaining({ name: 'MyType', type: 'named' }),
+          expect.objectContaining({ name: 'MyInterface', type: 'named' }),
+          expect.objectContaining({ name: 'myFunction', type: 'named' }),
+          expect.objectContaining({ name: 'MyClass', type: 'default' }),
+        ])
+      );
+    });
+
+    it('should extract JavaScript exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/javascript.js');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/javascript.js');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Check that we have the expected exports
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'myVar', type: 'named' }),
+          expect.objectContaining({ name: 'myFunction', type: 'named' }),
+          expect.objectContaining({ name: 'MyClass', type: 'default' }),
+        ])
+      );
+    });
+
+    it('should extract Python exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/python.py');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/python.py');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Python should export top-level functions, classes, and uppercase constants
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'my_function', type: 'named' }),
+          expect.objectContaining({ name: 'MY_CONSTANT', type: 'named' }),
+        ])
+      );
+    });
+
+    it('should extract Java public exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/java.java');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/java.java');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Java should export public declarations
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'myMethod', type: 'named' }),
+        ])
+      );
+      
+      // Should not export private methods
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'privateMethod' }),
+        ])
+      );
+    });
+
+    it('should extract Go capitalized exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/go.go');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/go.go');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Go should export capitalized identifiers
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'Hello', type: 'named' }),
+          expect.objectContaining({ name: 'MyType', type: 'named' }),
+          expect.objectContaining({ name: 'MyConst', type: 'named' }),
+        ])
+      );
+      
+      // Should not export lowercase identifiers
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'privateFunc' }),
+        ])
+      );
+    });
+
+    it('should handle re-exports and mixed export styles', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/exports_edge_cases.ts');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/exports_edge_cases.ts');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Should capture re-exports with aliasing (captures the alias)
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'bar', type: 'named' }),
+        ])
+      );
+      
+      // Should capture namespace re-exports
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: '*', type: 'namespace' }),
+        ])
+      );
+      
+      // Should capture named exports
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'a', type: 'named' }),
+        ])
+      );
+      
+      // Should capture default exports
+      // Note: For "export default class B {}", both named and default exports are captured
+      // This is expected behavior as documented in EXPORTS_IMPLEMENTATION.md
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'B', type: 'default' }),
+        ])
+      );
+      
+      // Should capture re-exported symbols
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'util', type: 'named' }),
+          expect.objectContaining({ name: 'c', type: 'named' }),
+          expect.objectContaining({ name: 'x', type: 'named' }),
+          expect.objectContaining({ name: 'y', type: 'named' }),
+          expect.objectContaining({ name: 'z', type: 'named' }),
+        ])
+      );
+    });
+  });
 });

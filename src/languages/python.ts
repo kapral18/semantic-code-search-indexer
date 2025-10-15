@@ -49,4 +49,9 @@ export const pythonConfig: LanguageConfiguration = {
     '(call function: (identifier) @function.call)',
     '(assignment right: (identifier) @variable.usage)',
   ],
+  exportQueries: [
+    '(module (function_definition name: (identifier) @export.name))',
+    '(module (class_definition name: (identifier) @export.name))',
+    '(module (expression_statement (assignment left: (identifier) @export.name (#match? @export.name "^[A-Z_][A-Z0-9_]*$"))))',
+  ],
 };

@@ -112,6 +112,14 @@ export async function createIndex(index?: string): Promise<void> {
               line: { type: 'integer' },
             },
           },
+          exports: {
+            type: 'nested',
+            properties: {
+              name: { type: 'keyword' },
+              type: { type: 'keyword' },
+              target: { type: 'keyword' },
+            },
+          },
           containerPath: { type: 'text' },
           filePath: { type: 'keyword' },
           directoryPath: { type: 'keyword', eager_global_ordinals: true },
@@ -202,12 +210,19 @@ export interface SymbolInfo {
   line: number;
 }
 
+export interface ExportInfo {
+  name: string;
+  type: 'named' | 'default' | 'namespace';
+  target?: string;
+}
+
 export interface CodeChunk {
   type: 'code' | 'doc';
   language: string;
   kind?: string;
   imports?: { path: string; type: 'module' | 'file'; symbols?: string[] }[];
   symbols?: SymbolInfo[];
+  exports?: ExportInfo[];
   containerPath?: string;
   filePath: string;
   directoryPath: string;

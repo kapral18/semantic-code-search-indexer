@@ -8,10 +8,16 @@ function hello() {
   console.log('Hello, world!');
 }
 
-class MyClass {
+export class MyClass {
   myMethod() {
     return 1;
   }
 }
 
-const myVar = () => {};
+export const myVar = () => {};
+
+export function myFunction() {
+  return 42;
+}
+
+export default MyClass;

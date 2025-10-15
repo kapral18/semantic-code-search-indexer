@@ -5,7 +5,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import { languageConfigurations } from '../languages';
-import { CodeChunk, SymbolInfo } from './elasticsearch';
+import { CodeChunk, SymbolInfo, ExportInfo } from './elasticsearch';
 import { indexingConfig } from '../config';
 import { logger } from './logger';
 
@@ -46,6 +46,7 @@ export interface LanguageConfiguration {
   queries: string[];
   importQueries?: string[];
   symbolQueries?: string[];
+  exportQueries?: string[];
 }
 
 export class LanguageParser {
@@ -353,6 +354,19 @@ export class LanguageParser {
     const matches = query.matches(tree.rootNode);
     const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
 
+    // Tree-sitter capture names for imports and exports
+    const IMPORT_CAPTURE_NAMES = {
+      PATH: 'import.path',
+      SYMBOL: 'import.symbol',
+    } as const;
+
+    const EXPORT_CAPTURE_NAMES = {
+      NAME: 'export.name',
+      DEFAULT: 'export.default',
+      NAMESPACE: 'export.namespace',
+      SOURCE: 'export.source',
+    } as const;
+
     const importsByLine: { [line: number]: { path: string; type: 'module' | 'file'; symbols?: string[] }[] } = {};
     if (langConfig.importQueries) {
       const importQuery = new Query(langConfig.parser, langConfig.importQueries.join('\n'));
@@ -364,10 +378,10 @@ export class LanguageParser {
         let pathFound = false;
 
         for (const capture of match.captures) {
-          if (capture.name === 'import.path') {
+          if (capture.name === IMPORT_CAPTURE_NAMES.PATH) {
             importPath = capture.node.text.replace(/['"]/g, '');
             pathFound = true;
-          } else if (capture.name === 'import.symbol') {
+          } else if (capture.name === IMPORT_CAPTURE_NAMES.SYMBOL) {
             symbols.push(capture.node.text);
           }
         }
@@ -411,6 +425,62 @@ export class LanguageParser {
       }
     }
 
+    const exportsByLine: { [line: number]: ExportInfo[] } = {};
+    if (langConfig.exportQueries) {
+      const exportQuery = new Query(langConfig.parser, langConfig.exportQueries.join('\n'));
+      const exportMatches = exportQuery.matches(tree.rootNode);
+
+      for (const match of exportMatches) {
+        let exportName = '';
+        let exportType: 'named' | 'default' | 'namespace' = 'named';
+        let exportTarget: string | undefined = undefined;
+
+        for (const capture of match.captures) {
+          if (capture.name === EXPORT_CAPTURE_NAMES.NAME) {
+            exportName = capture.node.text;
+          } else if (capture.name === EXPORT_CAPTURE_NAMES.DEFAULT) {
+            exportType = 'default';
+            // For default exports like "export default MyClass", traverse AST to find the identifier being exported
+            const parent = capture.node.parent;
+            if (parent) {
+              const identifierNode = parent.children.find(child => child.type === 'identifier' || child.type === 'type_identifier');
+              if (identifierNode) {
+                exportName = identifierNode.text;
+              }
+            }
+          } else if (capture.name === EXPORT_CAPTURE_NAMES.NAMESPACE) {
+            exportType = 'namespace';
+            exportName = '*';
+          } else if (capture.name === EXPORT_CAPTURE_NAMES.SOURCE) {
+            exportTarget = capture.node.text.replace(/['"]/g, '');
+            // Resolve relative paths
+            if (exportTarget.startsWith('.')) {
+              try {
+                const resolvedPath = path.resolve(path.dirname(filePath), exportTarget);
+                const gitRoot = execSync('git rev-parse --show-toplevel', { cwd: path.dirname(filePath) }).toString().trim();
+                exportTarget = path.relative(gitRoot, resolvedPath);
+              } catch (error) {
+                logger.warn(`Failed to resolve re-export path: ${exportTarget}`, error instanceof Error ? error : new Error(String(error)));
+                // Keep the original relative path
+              }
+            }
+          }
+        }
+
+        if (exportName || exportType === 'namespace') {
+          const line = match.captures[0].node.startPosition.row + 1;
+          if (!exportsByLine[line]) {
+            exportsByLine[line] = [];
+          }
+          exportsByLine[line].push({
+            name: exportName,
+            type: exportType,
+            ...(exportTarget && { target: exportTarget }),
+          });
+        }
+      }
+    }
+
     const uniqueMatches = Array.from(new Map(matches.map(match => {
       const node = match.captures[0].node;
       const chunkHash = createHash('sha256').update(node.text).digest('hex');
@@ -450,6 +520,7 @@ export class LanguageParser {
           chunkSymbols.push(...symbolsByLine[i]);
         }
       }
+      const chunkExports = exportsByLine[startLine] || [];
 
       const directoryInfo = extractDirectoryInfo(relativePath);
 
@@ -459,6 +530,7 @@ export class LanguageParser {
         kind: node.type,
         imports: chunkImports,
         symbols: chunkSymbols,
+        exports: chunkExports,
         containerPath,
         filePath: relativePath,
         ...directoryInfo,

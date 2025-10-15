@@ -7,3 +7,5 @@ class MyClass:
 def my_function():
     """This is a docstring."""
     pass
+
+MY_CONSTANT = 42
