@@ -74,4 +74,14 @@ export const javascript: LanguageConfiguration = {
     '(method_definition name: (property_identifier) @method.name)',
     '(variable_declarator name: (identifier) @variable.name)',
   ],
+  exportQueries: [
+    '(export_statement (lexical_declaration (variable_declarator name: (identifier) @export.name)))',
+    '(export_statement (function_declaration name: (identifier) @export.name))',
+    '(export_statement (class_declaration name: (identifier) @export.name))',
+    '(export_statement "default" @export.default)',
+    '(export_statement (export_clause (export_specifier name: (identifier) @export.name)))',
+    '(export_statement (export_clause (export_specifier name: (identifier) alias: (identifier) @export.name)))',
+    '(export_statement "*" @export.namespace (string) @export.source)',
+    '(export_statement (export_clause) (string) @export.source)',
+  ],
 };

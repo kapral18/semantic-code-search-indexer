@@ -46,6 +46,7 @@ export interface LanguageConfiguration {
   queries: string[];
   importQueries?: string[];
   symbolQueries?: string[];
+  exportQueries?: string[];
 }
 
 export class LanguageParser {
@@ -411,6 +412,57 @@ export class LanguageParser {
       }
     }
 
+    const exportsByLine: { [line: number]: { name: string; type: 'named' | 'default' | 'namespace'; target?: string }[] } = {};
+    if (langConfig.exportQueries) {
+      const exportQuery = new Query(langConfig.parser, langConfig.exportQueries.join('\n'));
+      const exportMatches = exportQuery.matches(tree.rootNode);
+
+      for (const match of exportMatches) {
+        let exportName = '';
+        let exportType: 'named' | 'default' | 'namespace' = 'named';
+        let exportTarget: string | undefined = undefined;
+
+        for (const capture of match.captures) {
+          if (capture.name === 'export.name') {
+            exportName = capture.node.text;
+          } else if (capture.name === 'export.default') {
+            exportType = 'default';
+            // For default exports, try to find the identifier being exported
+            const parent = capture.node.parent;
+            if (parent) {
+              const identifierNode = parent.children.find(child => child.type === 'identifier' || child.type === 'type_identifier');
+              if (identifierNode) {
+                exportName = identifierNode.text;
+              }
+            }
+          } else if (capture.name === 'export.namespace') {
+            exportType = 'namespace';
+            exportName = '*';
+          } else if (capture.name === 'export.source') {
+            exportTarget = capture.node.text.replace(/['"]/g, '');
+            // Resolve relative paths
+            if (exportTarget.startsWith('.')) {
+              const resolvedPath = path.resolve(path.dirname(filePath), exportTarget);
+              const gitRoot = execSync('git rev-parse --show-toplevel', { cwd: path.dirname(filePath) }).toString().trim();
+              exportTarget = path.relative(gitRoot, resolvedPath);
+            }
+          }
+        }
+
+        if (exportName || exportType === 'namespace') {
+          const line = match.captures[0].node.startPosition.row + 1;
+          if (!exportsByLine[line]) {
+            exportsByLine[line] = [];
+          }
+          exportsByLine[line].push({
+            name: exportName,
+            type: exportType,
+            ...(exportTarget && { target: exportTarget }),
+          });
+        }
+      }
+    }
+
     const uniqueMatches = Array.from(new Map(matches.map(match => {
       const node = match.captures[0].node;
       const chunkHash = createHash('sha256').update(node.text).digest('hex');
@@ -450,6 +502,7 @@ export class LanguageParser {
           chunkSymbols.push(...symbolsByLine[i]);
         }
       }
+      const chunkExports = exportsByLine[startLine] || [];
 
       const directoryInfo = extractDirectoryInfo(relativePath);
 
@@ -459,6 +512,7 @@ export class LanguageParser {
         kind: node.type,
         imports: chunkImports,
         symbols: chunkSymbols,
+        exports: chunkExports,
         containerPath,
         filePath: relativePath,
         ...directoryInfo,

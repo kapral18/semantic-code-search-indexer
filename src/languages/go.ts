@@ -57,4 +57,10 @@ export const goConfig: LanguageConfiguration = {
     '(composite_literal type: (type_identifier) @struct.instantiation)',
     '(short_var_declaration right: (expression_list (identifier)) @variable.usage)',
   ],
+  exportQueries: [
+    '(function_declaration name: (identifier) @export.name (#match? @export.name "^[A-Z]"))',
+    '(type_spec name: (type_identifier) @export.name (#match? @export.name "^[A-Z]"))',
+    '(const_spec name: (identifier) @export.name (#match? @export.name "^[A-Z]"))',
+    '(var_spec name: (identifier) @export.name (#match? @export.name "^[A-Z]"))',
+  ],
 };

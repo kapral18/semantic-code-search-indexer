@@ -48,4 +48,10 @@ export const javaConfig: LanguageConfiguration = {
     '(object_creation_expression type: (type_identifier) @class.instantiation)',
     '(variable_declarator value: (identifier) @variable.usage)',
   ],
+  exportQueries: [
+    '(class_declaration (modifiers "public") name: (identifier) @export.name)',
+    '(interface_declaration (modifiers "public") name: (identifier) @export.name)',
+    '(enum_declaration (modifiers "public") name: (identifier) @export.name)',
+    '(method_declaration (modifiers "public") name: (identifier) @export.name)',
+  ],
 };
