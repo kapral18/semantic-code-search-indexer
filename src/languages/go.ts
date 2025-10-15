@@ -12,6 +12,8 @@ export const goConfig: LanguageConfiguration = {
     '(return_statement) @return',
     '(function_declaration) @function',
     '(type_declaration) @type',
+    '(const_declaration) @const',
+    '(var_declaration) @variable',
     '(method_declaration) @method',
     '(call_expression) @call',
     '(comment) @comment',
@@ -42,6 +44,13 @@ export const goConfig: LanguageConfiguration = {
       .
       (var_declaration) @variable
     ) @variable_with_doc
+    `,
+    `
+    (
+      (comment)+ @doc
+      .
+      (const_declaration) @const
+    ) @const_with_doc
     `,
   ],
   importQueries: [

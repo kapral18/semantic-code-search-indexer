@@ -9,18 +9,24 @@ function hello() {
   console.log('Hello, world!');
 }
 
-class MyClass {
+export class MyClass {
   myMethod() {
     return 1;
   }
 }
 
-const myVar = () => {};
+export const myVar = () => {};
 
-type MyType = {
+export type MyType = {
   name: string;
 };
 
-interface MyInterface {
+export interface MyInterface {
   id: number;
 }
+
+export function myFunction() {
+  return 42;
+}
+
+export default MyClass;

@@ -309,4 +309,103 @@ Third paragraph`;
       expect(chunks[2].endLine).toBe(5);
     });
   });
+
+  describe('Export Detection', () => {
+    it('should extract TypeScript exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/typescript.ts');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/typescript.ts');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Check that we have the expected exports
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'myVar', type: 'named' }),
+          expect.objectContaining({ name: 'MyType', type: 'named' }),
+          expect.objectContaining({ name: 'MyInterface', type: 'named' }),
+          expect.objectContaining({ name: 'myFunction', type: 'named' }),
+          expect.objectContaining({ name: 'MyClass', type: 'default' }),
+        ])
+      );
+    });
+
+    it('should extract JavaScript exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/javascript.js');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/javascript.js');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Check that we have the expected exports
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'myVar', type: 'named' }),
+          expect.objectContaining({ name: 'myFunction', type: 'named' }),
+          expect.objectContaining({ name: 'MyClass', type: 'default' }),
+        ])
+      );
+    });
+
+    it('should extract Python exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/python.py');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/python.py');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Python should export top-level functions, classes, and uppercase constants
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'my_function', type: 'named' }),
+          expect.objectContaining({ name: 'MY_CONSTANT', type: 'named' }),
+        ])
+      );
+    });
+
+    it('should extract Java public exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/java.java');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/java.java');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Java should export public declarations
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'MyClass', type: 'named' }),
+          expect.objectContaining({ name: 'myMethod', type: 'named' }),
+        ])
+      );
+      
+      // Should not export private methods
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'privateMethod' }),
+        ])
+      );
+    });
+
+    it('should extract Go capitalized exports correctly', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/go.go');
+      const chunks = parser.parseFile(filePath, 'main', 'tests/fixtures/go.go');
+      
+      const allExports = chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Go should export capitalized identifiers
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'Hello', type: 'named' }),
+          expect.objectContaining({ name: 'MyType', type: 'named' }),
+          expect.objectContaining({ name: 'MyConst', type: 'named' }),
+        ])
+      );
+      
+      // Should not export lowercase identifiers
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'privateFunc' }),
+        ])
+      );
+    });
+  });
 });

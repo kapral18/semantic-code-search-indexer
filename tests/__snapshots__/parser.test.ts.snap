@@ -14,7 +14,7 @@ exports[`LanguageParser should parse Go fixtures correctly 1`] = `
     "exports": [],
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
-    "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
     "imports": [
       {
         "path": "fmt",
@@ -46,7 +46,7 @@ import "fmt"",
     "exports": [],
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
-    "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
     "imports": [],
     "kind": "comment",
     "language": "go",
@@ -79,7 +79,7 @@ kind: comment
     ],
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
-    "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
     "imports": [],
     "kind": "function_declaration",
     "language": "go",
@@ -118,7 +118,7 @@ func Hello() {
     "exports": [],
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
-    "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
     "imports": [],
     "kind": "call_expression",
     "language": "go",
@@ -157,7 +157,7 @@ fmt.Println("Hello, Go!")",
     ],
     "filePath": "tests/fixtures/go.go",
     "git_branch": "main",
-    "git_file_hash": "3617ff140f9ed70e1b2ee35bb62bf5929961447a",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
     "imports": [],
     "kind": "type_declaration",
     "language": "go",
@@ -174,6 +174,110 @@ type MyType struct {
         "kind": "type.name",
         "line": 10,
         "name": "MyType",
+      },
+    ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "524f208577d30407883ed6d141b05a0779c5eea7b3412a92d5e2f0eed0be79de",
+    "containerPath": "",
+    "content": "const MyConst = 42",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 14,
+    "exports": [
+      {
+        "name": "MyConst",
+        "type": "named",
+      },
+    ],
+    "filePath": "tests/fixtures/go.go",
+    "git_branch": "main",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
+    "imports": [],
+    "kind": "const_declaration",
+    "language": "go",
+    "semantic_text": "filePath: tests/fixtures/go.go
+directoryPath: tests/fixtures
+kind: const_declaration
+
+const MyConst = 42",
+    "startLine": 14,
+    "symbols": [],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "e2d901d7cca13ca757edc02cfcaf2c5675fac6e1c10881e6294806d34a888983",
+    "containerPath": "",
+    "content": "func privateFunc() {
+	fmt.Println("private")
+}",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 18,
+    "exports": [],
+    "filePath": "tests/fixtures/go.go",
+    "git_branch": "main",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
+    "imports": [],
+    "kind": "function_declaration",
+    "language": "go",
+    "semantic_text": "filePath: tests/fixtures/go.go
+directoryPath: tests/fixtures
+kind: function_declaration
+
+func privateFunc() {
+	fmt.Println("private")
+}",
+    "startLine": 16,
+    "symbols": [
+      {
+        "kind": "function.name",
+        "line": 16,
+        "name": "privateFunc",
+      },
+      {
+        "kind": "method.call",
+        "line": 17,
+        "name": "fmt.Println",
+      },
+    ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "dbb43fffe413a3411b9f0ad27db07f606830f0bd6c3fe807c5fda0d27706afde",
+    "containerPath": "",
+    "content": "fmt.Println("private")",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 17,
+    "exports": [],
+    "filePath": "tests/fixtures/go.go",
+    "git_branch": "main",
+    "git_file_hash": "d25a37ea48cae56c14a949781b8f4c1281779887",
+    "imports": [],
+    "kind": "call_expression",
+    "language": "go",
+    "semantic_text": "filePath: tests/fixtures/go.go
+directoryPath: tests/fixtures
+kind: call_expression
+
+fmt.Println("private")",
+    "startLine": 17,
+    "symbols": [
+      {
+        "kind": "method.call",
+        "line": 17,
+        "name": "fmt.Println",
       },
     ],
     "type": "code",
@@ -468,7 +572,7 @@ exports[`LanguageParser should parse Java fixtures correctly 1`] = `
     "exports": [],
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
-    "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
+    "git_file_hash": "a828ae1b74c6e6a4766cd435d1bc8bd0c9c9dd0f",
     "imports": [
       {
         "path": "java.util.List",
@@ -491,25 +595,34 @@ import java.util.List;",
     "updated_at": "[TIMESTAMP]",
   },
   {
-    "chunk_hash": "43827720aaea18494554ac7ba8a8973202016cb7e62c64b34ae982c939a5efbb",
+    "chunk_hash": "f3bdfe085b37fa68c4ce801bf52d37873eac07cf0623510f9f1003adabc5d936",
     "containerPath": "",
-    "content": "class MyClass {
+    "content": "public class MyClass {
     /**
      * This is a Javadoc comment.
      */
     public void myMethod() {
         System.out.println("Hello, Java!");
     }
+    
+    private void privateMethod() {
+        System.out.println("Private");
+    }
 }",
     "created_at": "[TIMESTAMP]",
     "directoryDepth": 2,
     "directoryName": "fixtures",
     "directoryPath": "tests/fixtures",
-    "endLine": 10,
-    "exports": [],
+    "endLine": 14,
+    "exports": [
+      {
+        "name": "MyClass",
+        "type": "named",
+      },
+    ],
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
-    "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
+    "git_file_hash": "a828ae1b74c6e6a4766cd435d1bc8bd0c9c9dd0f",
     "imports": [],
     "kind": "class_declaration",
     "language": "java",
@@ -517,12 +630,16 @@ import java.util.List;",
 directoryPath: tests/fixtures
 kind: class_declaration
 
-class MyClass {
+public class MyClass {
     /**
      * This is a Javadoc comment.
      */
     public void myMethod() {
         System.out.println("Hello, Java!");
+    }
+    
+    private void privateMethod() {
+        System.out.println("Private");
     }
 }",
     "startLine": 3,
@@ -540,6 +657,16 @@ class MyClass {
       {
         "kind": "method.call",
         "line": 8,
+        "name": "println",
+      },
+      {
+        "kind": "method.name",
+        "line": 11,
+        "name": "privateMethod",
+      },
+      {
+        "kind": "method.call",
+        "line": 12,
         "name": "println",
       },
     ],
@@ -560,7 +687,7 @@ class MyClass {
     "exports": [],
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
-    "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
+    "git_file_hash": "a828ae1b74c6e6a4766cd435d1bc8bd0c9c9dd0f",
     "imports": [],
     "kind": "block_comment",
     "language": "java",
@@ -596,7 +723,7 @@ containerPath: MyClass
     ],
     "filePath": "tests/fixtures/java.java",
     "git_branch": "main",
-    "git_file_hash": "676cf70813c5f27e977bf1c08dd977ddfd4d4906",
+    "git_file_hash": "a828ae1b74c6e6a4766cd435d1bc8bd0c9c9dd0f",
     "imports": [],
     "kind": "method_declaration",
     "language": "java",
@@ -624,6 +751,48 @@ public void myMethod() {
     "type": "code",
     "updated_at": "[TIMESTAMP]",
   },
+  {
+    "chunk_hash": "25b48812095dbae033aae31d13e0d5eeb9452351a6a95d114d73c4b5e7e134c2",
+    "containerPath": "MyClass",
+    "content": "private void privateMethod() {
+        System.out.println("Private");
+    }",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 13,
+    "exports": [],
+    "filePath": "tests/fixtures/java.java",
+    "git_branch": "main",
+    "git_file_hash": "a828ae1b74c6e6a4766cd435d1bc8bd0c9c9dd0f",
+    "imports": [],
+    "kind": "method_declaration",
+    "language": "java",
+    "semantic_text": "filePath: tests/fixtures/java.java
+directoryPath: tests/fixtures
+kind: method_declaration
+containerPath: MyClass
+
+private void privateMethod() {
+        System.out.println("Private");
+    }",
+    "startLine": 11,
+    "symbols": [
+      {
+        "kind": "method.name",
+        "line": 11,
+        "name": "privateMethod",
+      },
+      {
+        "kind": "method.call",
+        "line": 12,
+        "name": "println",
+      },
+    ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
 ]
 `;
 
@@ -641,7 +810,7 @@ exports[`LanguageParser should parse JavaScript fixtures correctly 1`] = `
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "comment",
     "language": "javascript",
@@ -667,7 +836,7 @@ kind: comment
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [
       {
         "path": "b",
@@ -708,7 +877,7 @@ import { a } from 'b';",
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "comment",
     "language": "javascript",
@@ -738,7 +907,7 @@ kind: comment
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "function_declaration",
     "language": "javascript",
@@ -772,7 +941,7 @@ function hello() {
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "expression_statement",
     "language": "javascript",
@@ -798,7 +967,7 @@ console.log('Hello, world!');",
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "call_expression",
     "language": "javascript",
@@ -809,6 +978,56 @@ kind: call_expression
 console.log('Hello, world!')",
     "startLine": 8,
     "symbols": [],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "6a2b8546a9fc4bcc2bec82d3f9e91e0a720e144f2c41ac8adadb75b607b5a61e",
+    "containerPath": "",
+    "content": "export class MyClass {
+  myMethod() {
+    return 1;
+  }
+}",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 15,
+    "exports": [
+      {
+        "name": "MyClass",
+        "type": "named",
+      },
+    ],
+    "filePath": "tests/fixtures/javascript.js",
+    "git_branch": "main",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
+    "imports": [],
+    "kind": "export_statement",
+    "language": "javascript",
+    "semantic_text": "filePath: tests/fixtures/javascript.js
+directoryPath: tests/fixtures
+kind: export_statement
+
+export class MyClass {
+  myMethod() {
+    return 1;
+  }
+}",
+    "startLine": 11,
+    "symbols": [
+      {
+        "kind": "class.name",
+        "line": 11,
+        "name": "MyClass",
+      },
+      {
+        "kind": "method.name",
+        "line": 12,
+        "name": "myMethod",
+      },
+    ],
     "type": "code",
     "updated_at": "[TIMESTAMP]",
   },
@@ -825,10 +1044,15 @@ console.log('Hello, world!')",
     "directoryName": "fixtures",
     "directoryPath": "tests/fixtures",
     "endLine": 15,
-    "exports": [],
+    "exports": [
+      {
+        "name": "MyClass",
+        "type": "named",
+      },
+    ],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "class_declaration",
     "language": "javascript",
@@ -871,7 +1095,7 @@ class MyClass {
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "method_definition",
     "language": "javascript",
@@ -906,7 +1130,7 @@ myMethod() {
     "exports": [],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "return_statement",
     "language": "javascript",
@@ -921,6 +1145,43 @@ return 1;",
     "updated_at": "[TIMESTAMP]",
   },
   {
+    "chunk_hash": "4193195d714e9781a85bca9b894464e46e9283c271cf3521c47a3b28aa48a082",
+    "containerPath": "",
+    "content": "export const myVar = () => {};",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 17,
+    "exports": [
+      {
+        "name": "myVar",
+        "type": "named",
+      },
+    ],
+    "filePath": "tests/fixtures/javascript.js",
+    "git_branch": "main",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
+    "imports": [],
+    "kind": "export_statement",
+    "language": "javascript",
+    "semantic_text": "filePath: tests/fixtures/javascript.js
+directoryPath: tests/fixtures
+kind: export_statement
+
+export const myVar = () => {};",
+    "startLine": 17,
+    "symbols": [
+      {
+        "kind": "variable.name",
+        "line": 17,
+        "name": "myVar",
+      },
+    ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
     "chunk_hash": "b4debc24bebfb7484ed5e08c2e47765e7b7449130b923b7c89c7079823b5c73a",
     "containerPath": "",
     "content": "const myVar = () => {};",
@@ -929,10 +1190,15 @@ return 1;",
     "directoryName": "fixtures",
     "directoryPath": "tests/fixtures",
     "endLine": 17,
-    "exports": [],
+    "exports": [
+      {
+        "name": "myVar",
+        "type": "named",
+      },
+    ],
     "filePath": "tests/fixtures/javascript.js",
     "git_branch": "main",
-    "git_file_hash": "66a4426da26b3dd783dd4f065db3fcb5be3c99c4",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
     "imports": [],
     "kind": "lexical_declaration",
     "language": "javascript",
@@ -949,6 +1215,145 @@ const myVar = () => {};",
         "name": "myVar",
       },
     ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "0bd07b8f4cd16fbf1b31cc0f797e242f3c3aed6e4ef33f81c3f7eb0c2b47fb48",
+    "containerPath": "",
+    "content": "export function myFunction() {
+  return 42;
+}",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 21,
+    "exports": [
+      {
+        "name": "myFunction",
+        "type": "named",
+      },
+    ],
+    "filePath": "tests/fixtures/javascript.js",
+    "git_branch": "main",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
+    "imports": [],
+    "kind": "export_statement",
+    "language": "javascript",
+    "semantic_text": "filePath: tests/fixtures/javascript.js
+directoryPath: tests/fixtures
+kind: export_statement
+
+export function myFunction() {
+  return 42;
+}",
+    "startLine": 19,
+    "symbols": [
+      {
+        "kind": "function.name",
+        "line": 19,
+        "name": "myFunction",
+      },
+    ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "efc1b94606ac2d3d1104dc9ed840d9abfe221f600ff381e992bf54776f9470f6",
+    "containerPath": "",
+    "content": "function myFunction() {
+  return 42;
+}",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 21,
+    "exports": [
+      {
+        "name": "myFunction",
+        "type": "named",
+      },
+    ],
+    "filePath": "tests/fixtures/javascript.js",
+    "git_branch": "main",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
+    "imports": [],
+    "kind": "function_declaration",
+    "language": "javascript",
+    "semantic_text": "filePath: tests/fixtures/javascript.js
+directoryPath: tests/fixtures
+kind: function_declaration
+
+function myFunction() {
+  return 42;
+}",
+    "startLine": 19,
+    "symbols": [
+      {
+        "kind": "function.name",
+        "line": 19,
+        "name": "myFunction",
+      },
+    ],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "6a98d35093f15c84a9ccc34b0265e824ea49910551c181a250b362448204a253",
+    "containerPath": "",
+    "content": "return 42;",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 20,
+    "exports": [],
+    "filePath": "tests/fixtures/javascript.js",
+    "git_branch": "main",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
+    "imports": [],
+    "kind": "return_statement",
+    "language": "javascript",
+    "semantic_text": "filePath: tests/fixtures/javascript.js
+directoryPath: tests/fixtures
+kind: return_statement
+
+return 42;",
+    "startLine": 20,
+    "symbols": [],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "1aa103d3c9f3a73b52d91ca51822c4228730d040ad4c992945db2e91d26866c0",
+    "containerPath": "",
+    "content": "export default MyClass;",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 23,
+    "exports": [
+      {
+        "name": "MyClass",
+        "type": "default",
+      },
+    ],
+    "filePath": "tests/fixtures/javascript.js",
+    "git_branch": "main",
+    "git_file_hash": "2d55abebd9ad0956aa451830fcbe714121386d2a",
+    "imports": [],
+    "kind": "export_statement",
+    "language": "javascript",
+    "semantic_text": "filePath: tests/fixtures/javascript.js
+directoryPath: tests/fixtures
+kind: export_statement
+
+export default MyClass;",
+    "startLine": 23,
+    "symbols": [],
     "type": "code",
     "updated_at": "[TIMESTAMP]",
   },
@@ -1124,7 +1529,7 @@ exports[`LanguageParser should parse Python fixtures correctly 1`] = `
     "exports": [],
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
-    "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
     "imports": [
       {
         "path": "os",
@@ -1163,7 +1568,7 @@ import os",
     ],
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
-    "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
     "imports": [],
     "kind": "class_definition",
     "language": "python",
@@ -1208,7 +1613,7 @@ class MyClass:
     "exports": [],
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
-    "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
     "imports": [],
     "kind": "function_definition",
     "language": "python",
@@ -1246,7 +1651,7 @@ def my_method(self):
     "exports": [],
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
-    "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
     "imports": [],
     "kind": "call",
     "language": "python",
@@ -1285,7 +1690,7 @@ print("Hello, Python!")",
     ],
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
-    "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
     "imports": [],
     "kind": "function_definition",
     "language": "python",
@@ -1319,7 +1724,7 @@ def my_function():
     "exports": [],
     "filePath": "tests/fixtures/python.py",
     "git_branch": "main",
-    "git_file_hash": "deccc575415922af2636d83dab41365c1cd68f33",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
     "imports": [],
     "kind": "expression_statement",
     "language": "python",
@@ -1330,6 +1735,43 @@ kind: expression_statement
 """This is a docstring."""",
     "startLine": 8,
     "symbols": [],
+    "type": "code",
+    "updated_at": "[TIMESTAMP]",
+  },
+  {
+    "chunk_hash": "b1a6a7b99eae748d1ea44b9d3670d6043166d95855830d8b1db7924cf86eb00d",
+    "containerPath": "",
+    "content": "MY_CONSTANT = 42",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 11,
+    "exports": [
+      {
+        "name": "MY_CONSTANT",
+        "type": "named",
+      },
+    ],
+    "filePath": "tests/fixtures/python.py",
+    "git_branch": "main",
+    "git_file_hash": "9f937b2fd82800193eeebc82963d4147e32f9c29",
+    "imports": [],
+    "kind": "expression_statement",
+    "language": "python",
+    "semantic_text": "filePath: tests/fixtures/python.py
+directoryPath: tests/fixtures
+kind: expression_statement
+
+MY_CONSTANT = 42",
+    "startLine": 11,
+    "symbols": [
+      {
+        "kind": "variable.name",
+        "line": 11,
+        "name": "MY_CONSTANT",
+      },
+    ],
     "type": "code",
     "updated_at": "[TIMESTAMP]",
   },
