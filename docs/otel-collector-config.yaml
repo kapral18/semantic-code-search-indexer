@@ -1,0 +1,233 @@
+# OpenTelemetry Collector Configuration for Semantic Code Search Indexer
+#
+# This configuration receives logs and metrics from the indexer via OTLP/HTTP
+# and exports them to Elasticsearch with proper index patterns.
+#
+# Deploy this collector between your indexer and Elasticsearch to:
+# - Buffer and batch telemetry data
+# - Add resource attributes (host info, environment)
+# - Handle authentication to Elasticsearch
+# - Support multiple exporters (Elasticsearch, debug console, etc.)
+
+receivers:
+  # OTLP HTTP receiver for logs and metrics
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # Batch processor for efficient transmission
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  # Resource detection adds host information
+  resourcedetection:
+    detectors: [env, system]
+    system:
+      hostname_sources: [os]
+
+  # Attributes processor ensures consistent naming
+  attributes:
+    actions:
+      - key: deployment.environment
+        from_attribute: deployment.environment
+        action: upsert
+      - key: service.name
+        from_attribute: service.name
+        action: upsert
+
+exporters:
+  # Elasticsearch exporter for logs
+  elasticsearch/logs:
+    endpoints:
+      - ${ELASTICSEARCH_ENDPOINT}
+    # Authentication - use one of the following:
+    # Option 1: API Key
+    api_key: ${ELASTICSEARCH_API_KEY}
+    # Option 2: Username/password
+    # auth:
+    #   authenticator: basicauth/elasticsearch
+    # Option 3: Cloud ID
+    # cloudid: ${ELASTICSEARCH_CLOUD_ID}
+    
+    # Index configuration for logs
+    logs_index: logs-semanticcode.otel-default
+    logs_dynamic_index:
+      enabled: false
+    
+    # Mappings
+    mapping:
+      mode: ecs
+    
+    # Retry configuration
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+  # Elasticsearch exporter for metrics
+  elasticsearch/metrics:
+    endpoints:
+      - ${ELASTICSEARCH_ENDPOINT}
+    # Authentication - use one of the following:
+    # Option 1: API Key
+    api_key: ${ELASTICSEARCH_API_KEY}
+    # Option 2: Username/password
+    # auth:
+    #   authenticator: basicauth/elasticsearch
+    # Option 3: Cloud ID
+    # cloudid: ${ELASTICSEARCH_CLOUD_ID}
+    
+    # Index configuration for metrics
+    metrics_index: metrics-semanticcode.otel-default
+    metrics_dynamic_index:
+      enabled: false
+    
+    # Mapping mode for metrics
+    # NOTE: For Elasticsearch 9.x, must use 'otel' mode
+    # - 'otel' mode (ES 8.12+): Required for metrics support
+    # - 'ecs' mode (ES 7.17-8.11): For older Elasticsearch versions
+    # - 'raw' mode: Does NOT support metrics (logs/traces only)
+    mapping:
+      mode: otel
+      # Deduplication settings for histograms
+      dedup: true
+      dedot: false
+    
+    # Flush settings to ensure data is sent
+    flush:
+      interval: 5s
+      bytes: 5242880
+    
+    # Retry configuration
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+  # Debug exporter for development/troubleshooting
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+# Optional: Authentication extension for basic auth
+extensions:
+  basicauth/elasticsearch:
+    client_auth:
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+  
+  # Health check extension
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  # Uncomment if using basic auth:
+  # extensions: [basicauth/elasticsearch, health_check]
+  
+  # Telemetry configuration for the collector itself
+  telemetry:
+    logs:
+      level: info
+      # Use 'debug' for detailed troubleshooting
+      # level: debug
+  
+  pipelines:
+    # Logs pipeline
+    logs:
+      receivers: [otlp]
+      processors: [resourcedetection, attributes, batch]
+      exporters: [elasticsearch/logs]
+      # Add debug exporter for troubleshooting:
+      # exporters: [elasticsearch/logs, debug]
+    
+    # Metrics pipeline
+    metrics:
+      receivers: [otlp]
+      processors: [resourcedetection, attributes, batch]
+      exporters: [elasticsearch/metrics]
+      # Add debug exporter for troubleshooting histograms:
+      # exporters: [elasticsearch/metrics, debug]
+
+# Environment variable examples:
+#
+# export ELASTICSEARCH_ENDPOINT="https://elasticsearch.example.com:9200"
+# export ELASTICSEARCH_API_KEY="your-api-key-here"
+# 
+# Or for username/password auth:
+# export ELASTICSEARCH_USERNAME="elastic"
+# export ELASTICSEARCH_PASSWORD="changeme"
+#
+# Or for Elastic Cloud:
+# export ELASTICSEARCH_CLOUD_ID="deployment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmJDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVm"
+#
+# IMPORTANT: HISTOGRAM TEMPORALITY AND MAPPING MODE
+#
+# The Elasticsearch exporter ONLY supports Delta temporality for histograms.
+# The application code configures the OTLP exporter with:
+#   temporalityPreference: AggregationTemporality.DELTA
+#
+# TROUBLESHOOTING HISTOGRAMS:
+#
+# If histograms (parser.chunks.size, indexer.batch.duration, indexer.batch.size) 
+# are not appearing in Elasticsearch 9.x:
+#
+# 1. Verify Delta temporality is configured in the application:
+#    - Check src/utils/otel_provider.ts for temporalityPreference: DELTA
+#    - Without this, histograms will be silently dropped by the ES exporter
+#    - Enable debug exporter to verify: exporters: [elasticsearch/metrics, debug]
+#    - Look for "AggregationTemporality: Delta" in collector logs
+#
+# 2. Try different mapping modes (current: raw):
+#    - 'raw' mode: Stores histograms as nested JSON objects (most compatible)
+#    - 'otel' mode: Native OTel types (may have histogram indexing issues in ES 9.x)
+#    - 'ecs' mode: ECS schema (limited histogram support)
+#
+# 3. Check if histogram documents are being indexed:
+#    GET metrics-semanticcode.otel-default/_search
+#    {
+#      "query": { "term": { "name": "indexer.batch.size" } },
+#      "size": 1
+#    }
+#
+# 4. Check the actual document structure:
+#    GET metrics-semanticcode.otel-default/_search
+#    {
+#      "query": { "wildcard": { "name": "*size*" } },
+#      "size": 1,
+#      "_source": true
+#    }
+#
+# 5. Check for indexing errors in Elasticsearch logs:
+#    - Look for mapping conflicts or rejected documents
+#    - Check: GET metrics-semanticcode.otel-default/_mapping
+#
+# 6. Known Limitation - Histogram Visibility:
+#    - OpenTelemetry histograms are stored as complex nested structures
+#    - They may not appear in Kibana's field list
+#    - ES|QL has limited support for querying histogram data structures
+#    - Histograms ARE indexed and can be accessed via direct ES queries
+#    - Use Kibana Lens or TSVB for histogram visualizations
+
+# Running the collector:
+#
+# Docker:
+#   docker run -p 4318:4318 -p 4317:4317 -p 13133:13133 \
+#     -e ELASTICSEARCH_ENDPOINT=https://elasticsearch.example.com:9200 \
+#     -e ELASTICSEARCH_API_KEY=your-api-key \
+#     -v $(pwd)/otel-collector-config.yaml:/etc/otelcol/config.yaml \
+#     otel/opentelemetry-collector-contrib:latest
+#
+# Binary:
+#   export ELASTICSEARCH_ENDPOINT=https://elasticsearch.example.com:9200
+#   export ELASTICSEARCH_API_KEY=your-api-key
+#   otelcol-contrib --config otel-collector-config.yaml

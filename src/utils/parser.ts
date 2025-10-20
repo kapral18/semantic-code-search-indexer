@@ -4,12 +4,27 @@ import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
-import { languageConfigurations } from '../languages';
+import { languageConfigurations, parseLanguageNames } from '../languages';
 import { CodeChunk, SymbolInfo, ExportInfo } from './elasticsearch';
 import { indexingConfig } from '../config';
 import { logger } from './logger';
+import {
+  CHUNK_TYPE_CODE,
+  CHUNK_TYPE_DOC,
+  LANG_MARKDOWN,
+  LANG_YAML,
+  LANG_JSON,
+  LANG_TEXT,
+  LANG_GRADLE,
+  PARSER_TYPE_MARKDOWN,
+  PARSER_TYPE_YAML,
+  PARSER_TYPE_JSON,
+  PARSER_TYPE_TEXT,
+  PARSER_TYPE_TREE_SITTER,
+} from './constants';
 
 const { Query } = Parser;
+
 
 /**
  * Extracts directory information from a file path.
@@ -49,6 +64,32 @@ export interface LanguageConfiguration {
   exportQueries?: string[];
 }
 
+export interface ParseResult {
+  chunks: CodeChunk[];
+  metrics: {
+    filesProcessed: number;
+    filesFailed: number;
+    chunksCreated: number;
+    chunksSkipped: number;
+    chunkSizes: number[];
+    language: string;
+    parserType: string;
+  };
+}
+
+/**
+ * Base structure for parser metric data
+ */
+const BASE_PARSER_METRIC_DATA: ParseResult['metrics'] = {
+  filesProcessed: 0,
+  filesFailed: 0,
+  chunksCreated: 0,
+  chunksSkipped: 0,
+  chunkSizes: [],
+  language: '',
+  parserType: '',
+};
+
 export class LanguageParser {
   private languages: Map<string, LanguageConfiguration>;
   public fileSuffixMap: Map<string, LanguageConfiguration>;
@@ -56,14 +97,12 @@ export class LanguageParser {
   constructor() {
     this.languages = new Map();
     this.fileSuffixMap = new Map();
-    const languageNames = (process.env.SEMANTIC_CODE_INDEXER_LANGUAGES || 'typescript,javascript,markdown,yaml,java,go,python,json').split(',');
+    const languageNames = parseLanguageNames(process.env.SEMANTIC_CODE_INDEXER_LANGUAGES);
     for (const name of languageNames) {
-      const config = (languageConfigurations as { [key: string]: LanguageConfiguration })[name.trim()];
-      if (config) {
-        this.languages.set(config.name, config);
-        for (const suffix of config.fileSuffixes) {
-          this.fileSuffixMap.set(suffix, config);
-        }
+      const config = languageConfigurations[name];
+      this.languages.set(config.name, config);
+      for (const suffix of config.fileSuffixes) {
+        this.fileSuffixMap.set(suffix, config);
       }
     }
   }
@@ -73,29 +112,65 @@ export class LanguageParser {
     return this.fileSuffixMap.get(fileExt);
   }
 
-  public parseFile(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
+  public parseFile(filePath: string, gitBranch: string, relativePath: string): ParseResult {
     const langConfig = this.getLanguageConfigForFile(filePath);
     if (!langConfig) {
       console.warn(`Unsupported file type: ${path.extname(filePath)}`);
-      return [];
+      return {
+        chunks: [],
+        metrics: { ...BASE_PARSER_METRIC_DATA },
+      };
     }
 
-    if (langConfig.parser === null) {
-      if (langConfig.name === 'markdown') {
-        return this.parseMarkdown(filePath, gitBranch, relativePath);
-      }
-      if (langConfig.name === 'yaml') {
-        return this.parseYaml(filePath, gitBranch, relativePath);
-      }
-      if (langConfig.name === 'json') {
-        return this.parseJson(filePath, gitBranch, relativePath);
-      }
-      if (langConfig.name === 'text' || langConfig.name === 'gradle') {
-        return this.parseText(filePath, gitBranch, relativePath);
-      }
-    }
+    const metricData = {
+      ...BASE_PARSER_METRIC_DATA,
+      language: langConfig.name,
+    };
 
-    return this.parseWithTreeSitter(filePath, gitBranch, relativePath, langConfig);
+    try {
+      let chunks: CodeChunk[];
+
+      if (langConfig.parser === null) {
+        if (langConfig.name === LANG_MARKDOWN) {
+          const result = this.parseMarkdown(filePath, gitBranch, relativePath);
+          chunks = result.chunks;
+          metricData.chunksSkipped += result.chunksSkipped;
+          metricData.parserType = PARSER_TYPE_MARKDOWN;
+        } else if (langConfig.name === LANG_YAML) {
+          const result = this.parseYaml(filePath, gitBranch, relativePath);
+          chunks = result.chunks;
+          metricData.chunksSkipped += result.chunksSkipped;
+          metricData.parserType = PARSER_TYPE_YAML;
+        } else if (langConfig.name === LANG_JSON) {
+          const result = this.parseJson(filePath, gitBranch, relativePath);
+          chunks = result.chunks;
+          metricData.chunksSkipped += result.chunksSkipped;
+          metricData.parserType = PARSER_TYPE_JSON;
+        } else if (langConfig.name === LANG_TEXT || langConfig.name === LANG_GRADLE) {
+          const result = this.parseText(filePath, gitBranch, relativePath);
+          chunks = result.chunks;
+          metricData.chunksSkipped += result.chunksSkipped;
+          metricData.parserType = PARSER_TYPE_TEXT;
+        } else {
+          chunks = [];
+        }
+      } else {
+        const result = this.parseWithTreeSitter(filePath, gitBranch, relativePath, langConfig);
+        chunks = result.chunks;
+        metricData.chunksSkipped += result.chunksSkipped;
+        metricData.parserType = PARSER_TYPE_TREE_SITTER;
+      }
+
+      metricData.filesProcessed = 1;
+      metricData.chunksCreated = chunks.length;
+      metricData.chunkSizes = chunks.map(c => Buffer.byteLength(c.content, 'utf8'));
+
+      return { chunks, metrics: metricData };
+    } catch (error) {
+      logger.error(`Failed to parse file ${filePath}:`, error instanceof Error ? error : new Error(String(error)));
+      metricData.filesFailed = 1;
+      throw error;
+    }
   }
 
   /**
@@ -106,33 +181,27 @@ export class LanguageParser {
    * @param gitBranch - Git branch name
    * @param relativePath - Relative path from repository root
    * @param language - Language name for the chunks
-   * @returns Array of CodeChunk objects
+   * @returns Object with chunks array and chunksSkipped count
    */
-  private parseParagraphs(filePath: string, gitBranch: string, relativePath: string, language: string): CodeChunk[] {
+  private parseParagraphs(filePath: string, gitBranch: string, relativePath: string, language: string): { chunks: CodeChunk[]; chunksSkipped: number } {
     const now = new Date().toISOString();
-    let content: string;
-    let gitFileHash: string;
+    const content = fs.readFileSync(filePath, 'utf8');
+    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
 
-    try {
-      content = fs.readFileSync(filePath, 'utf8');
-      gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
-    } catch (error) {
-      logger.error(`Failed to read file ${filePath}:`, error instanceof Error ? error : new Error(String(error)));
-      return [];
-    }
-
-    const chunks = content.split(/\n\s*\n/); // Split by paragraphs
+    const paragraphs = content.split(/\n\s*\n/); // Split by paragraphs
     let searchIndex = 0;
+    let chunksSkipped = 0;
 
-    return chunks
+    const chunks = paragraphs
       .filter(chunk => {
         if (Buffer.byteLength(chunk, 'utf8') > indexingConfig.maxChunkSizeBytes) {
           logger.warn(`Skipping chunk in ${filePath} because it is larger than maxChunkSizeBytes`);
+          chunksSkipped++;
           return false;
         }
         return /[a-zA-Z0-9]/.test(chunk); // Filter out chunks with no alphanumeric characters
       })
-      .map(chunk => {
+      .map((chunk): CodeChunk => {
         // Calculate line numbers by tracking position in original content
         let chunkStartIndex = content.indexOf(chunk, searchIndex);
         if (chunkStartIndex === -1) {
@@ -146,7 +215,7 @@ export class LanguageParser {
         const directoryInfo = extractDirectoryInfo(relativePath);
 
         const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
-            type: 'doc',
+            type: CHUNK_TYPE_DOC,
             language,
             filePath: relativePath,
             ...directoryInfo,
@@ -159,11 +228,14 @@ export class LanguageParser {
             created_at: now,
             updated_at: now,
         };
+
         return {
           ...baseChunk,
           semantic_text: this.prepareSemanticText(baseChunk),
-        } as CodeChunk;
+        };
     });
+
+    return { chunks, chunksSkipped };
   }
 
   /**
@@ -173,10 +245,10 @@ export class LanguageParser {
    * @param filePath - Absolute path to the file
    * @param gitBranch - Git branch name
    * @param relativePath - Relative path from repository root
-   * @returns Array of CodeChunk objects
+   * @returns Object with chunks array and chunksSkipped count
    */
-  private parseText(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
-    return this.parseParagraphs(filePath, gitBranch, relativePath, 'text');
+  private parseText(filePath: string, gitBranch: string, relativePath: string): { chunks: CodeChunk[]; chunksSkipped: number } {
+    return this.parseParagraphs(filePath, gitBranch, relativePath, LANG_TEXT);
   }
 
   /**
@@ -186,10 +258,10 @@ export class LanguageParser {
    * @param filePath - Absolute path to the file
    * @param gitBranch - Git branch name
    * @param relativePath - Relative path from repository root
-   * @returns Array of CodeChunk objects
+   * @returns Object with chunks array and chunksSkipped count
    */
-  private parseMarkdown(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
-    return this.parseParagraphs(filePath, gitBranch, relativePath, 'markdown');
+  private parseMarkdown(filePath: string, gitBranch: string, relativePath: string): { chunks: CodeChunk[]; chunksSkipped: number } {
+    return this.parseParagraphs(filePath, gitBranch, relativePath, LANG_MARKDOWN);
   }
 
   /**
@@ -199,32 +271,27 @@ export class LanguageParser {
    * @param filePath - Absolute path to the file
    * @param gitBranch - Git branch name
    * @param relativePath - Relative path from repository root
-   * @returns Array of CodeChunk objects
+   * @returns Object with chunks array and chunksSkipped count
    */
-  private parseYaml(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
+  private parseYaml(filePath: string, gitBranch: string, relativePath: string): { chunks: CodeChunk[]; chunksSkipped: number } {
     const now = new Date().toISOString();
-    let content: string;
-    let gitFileHash: string;
-
-    try {
-      content = fs.readFileSync(filePath, 'utf8');
-      gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
-    } catch (error) {
-      logger.error(`Failed to read file ${filePath}:`, error instanceof Error ? error : new Error(String(error)));
-      return [];
-    }
+    const content = fs.readFileSync(filePath, 'utf8');
+    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
 
     const documents = content.split(/^---/m); // Split by document separator
     const allChunks: CodeChunk[] = [];
     let globalLineNumber = 1;
+    let chunksSkipped = 0;
 
     documents.forEach(doc => {
       if (/[a-zA-Z0-9]/.test(doc)) {
         const lines = doc.trim().split('\n');
         lines.forEach((line, localIndex) => {
           if (line.trim().length > 0) {
-            if (Buffer.byteLength(line, 'utf8') > indexingConfig.maxChunkSizeBytes) {
+            const lineSize = Buffer.byteLength(line, 'utf8');
+            if (lineSize > indexingConfig.maxChunkSizeBytes) {
               logger.warn(`Skipping chunk in ${filePath} because it is larger than maxChunkSizeBytes`);
+              chunksSkipped++;
               return;
             }
 
@@ -235,8 +302,8 @@ export class LanguageParser {
             const directoryInfo = extractDirectoryInfo(relativePath);
 
             const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
-              type: 'doc',
-              language: 'yaml',
+              type: CHUNK_TYPE_DOC,
+              language: LANG_YAML,
               filePath: relativePath,
               ...directoryInfo,
               git_file_hash: gitFileHash,
@@ -248,17 +315,18 @@ export class LanguageParser {
               created_at: now,
               updated_at: now,
             };
+
             allChunks.push({
               ...baseChunk,
               semantic_text: this.prepareSemanticText(baseChunk),
-            } as CodeChunk);
+            });
           }
         });
         // Update global line number for next document
         globalLineNumber += lines.length + 1; // +1 for the document separator line
       }
     });
-    return allChunks;
+    return { chunks: allChunks, chunksSkipped };
   }
 
   /**
@@ -269,81 +337,73 @@ export class LanguageParser {
    * @param filePath - Absolute path to the file
    * @param gitBranch - Git branch name
    * @param relativePath - Relative path from repository root
-   * @returns Array of CodeChunk objects
+   * @returns Object with chunks array and chunksSkipped count
    */
-  private parseJson(filePath: string, gitBranch: string, relativePath: string): CodeChunk[] {
+  private parseJson(filePath: string, gitBranch: string, relativePath: string): { chunks: CodeChunk[]; chunksSkipped: number } {
     const now = new Date().toISOString();
-    let content: string;
-    let gitFileHash: string;
-
-    try {
-      content = fs.readFileSync(filePath, 'utf8');
-      gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
-    } catch (error) {
-      logger.error(`Failed to read file ${filePath}:`, error instanceof Error ? error : new Error(String(error)));
-      return [];
-    }
+    const content = fs.readFileSync(filePath, 'utf8');
+    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
 
     const allChunks: CodeChunk[] = [];
-    try {
-      const json = JSON.parse(content);
-      let searchIndex = 0;
-      
-      for (const key in json) {
-        const value = JSON.stringify(json[key], null, 2);
-        const chunkContent = `"${key}": ${value}`;
-        if (Buffer.byteLength(chunkContent, 'utf8') > indexingConfig.maxChunkSizeBytes) {
-          logger.warn(`Skipping chunk in ${filePath} because it is larger than maxChunkSizeBytes`);
-          continue;
-        }
+    let chunksSkipped = 0;
+    const json = JSON.parse(content);
+    let searchIndex = 0;
 
-        // Find the position of this key in the original content
-        // Search for the key with quotes and colon to get accurate position
-        const keyPattern = `"${key}"`;
-        const keyPosition = content.indexOf(keyPattern, searchIndex);
-        
-        if (keyPosition !== -1) {
-          // Calculate line number based on position
-          const startLine = (content.substring(0, keyPosition).match(/\n/g) || []).length + 1;
-          
-          // Find the end of this key's value in the original content
-          // This is an approximation - we'll use the number of newlines in the formatted value
-          const valueLines = value.split('\n').length;
-          const endLine = startLine + valueLines - 1;
-          
-          // Update search index to after this key
-          searchIndex = keyPosition + keyPattern.length;
-
-          const chunkHash = createHash('sha256').update(chunkContent).digest('hex');
-          const directoryInfo = extractDirectoryInfo(relativePath);
-
-          const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
-            type: 'doc',
-            language: 'json',
-            filePath: relativePath,
-            ...directoryInfo,
-            git_file_hash: gitFileHash,
-            git_branch: gitBranch,
-            chunk_hash: chunkHash,
-            content: chunkContent,
-            startLine,
-            endLine,
-            created_at: now,
-            updated_at: now,
-          };
-          allChunks.push({
-            ...baseChunk,
-            semantic_text: this.prepareSemanticText(baseChunk),
-          } as CodeChunk);
-        }
+    for (const key in json) {
+      const value = JSON.stringify(json[key], null, 2);
+      const chunkContent = `"${key}": ${value}`;
+      const chunkSize = Buffer.byteLength(chunkContent, 'utf8');
+      if (chunkSize > indexingConfig.maxChunkSizeBytes) {
+        logger.warn(`Skipping chunk in ${filePath} because it is larger than maxChunkSizeBytes`);
+        chunksSkipped++;
+        continue;
       }
-    } catch (error) {
-      logger.error(`Failed to parse JSON file: ${filePath}`, error instanceof Error ? error : new Error(String(error)));
+
+      // Find the position of this key in the original content
+      // Search for the key with quotes and colon to get accurate position
+      const keyPattern = `"${key}"`;
+      const keyPosition = content.indexOf(keyPattern, searchIndex);
+
+      if (keyPosition !== -1) {
+        // Calculate line number based on position
+        const startLine = (content.substring(0, keyPosition).match(/\n/g) || []).length + 1;
+
+        // Find the end of this key's value in the original content
+        // This is an approximation - we'll use the number of newlines in the formatted value
+        const valueLines = value.split('\n').length;
+        const endLine = startLine + valueLines - 1;
+
+        // Update search index to after this key
+        searchIndex = keyPosition + keyPattern.length;
+
+        const chunkHash = createHash('sha256').update(chunkContent).digest('hex');
+        const directoryInfo = extractDirectoryInfo(relativePath);
+
+        const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
+          type: CHUNK_TYPE_DOC,
+          language: LANG_JSON,
+          filePath: relativePath,
+          ...directoryInfo,
+          git_file_hash: gitFileHash,
+          git_branch: gitBranch,
+          chunk_hash: chunkHash,
+          content: chunkContent,
+          startLine,
+          endLine,
+          created_at: now,
+          updated_at: now,
+        };
+
+        allChunks.push({
+          ...baseChunk,
+          semantic_text: this.prepareSemanticText(baseChunk),
+        });
+      }
     }
-    return allChunks;
+    return { chunks: allChunks, chunksSkipped };
   }
 
-  private parseWithTreeSitter(filePath: string, gitBranch: string, relativePath: string, langConfig: LanguageConfiguration): CodeChunk[] {
+  private parseWithTreeSitter(filePath: string, gitBranch: string, relativePath: string, langConfig: LanguageConfiguration): { chunks: CodeChunk[]; chunksSkipped: number } {
     const now = new Date().toISOString();
     const parser = new Parser();
     parser.setLanguage(langConfig.parser);
@@ -487,11 +547,14 @@ export class LanguageParser {
       return [`${node.startIndex}-${node.endIndex}-${chunkHash}`, match];
     })).values());
 
-    return uniqueMatches.map(({ captures }) => {
+    let chunksSkipped = 0;
+    const chunks = uniqueMatches.map(({ captures }): CodeChunk | null => {
       const node = captures[0].node;
       const content = node.text;
-      if (Buffer.byteLength(content, 'utf8') > indexingConfig.maxChunkSizeBytes) {
+      const contentSize = Buffer.byteLength(content, 'utf8');
+      if (contentSize > indexingConfig.maxChunkSizeBytes) {
         logger.warn(`Skipping chunk in ${filePath} because it is larger than maxChunkSizeBytes`);
+        chunksSkipped++;
         return null;
       }
       const chunkHash = createHash('sha256').update(content).digest('hex');
@@ -525,7 +588,7 @@ export class LanguageParser {
       const directoryInfo = extractDirectoryInfo(relativePath);
 
       const baseChunk: Omit<CodeChunk, 'semantic_text' | 'code_vector'> = {
-        type: 'code',
+        type: CHUNK_TYPE_CODE,
         language: langConfig.name,
         kind: node.type,
         imports: chunkImports,
@@ -547,8 +610,10 @@ export class LanguageParser {
       return {
         ...baseChunk,
         semantic_text: this.prepareSemanticText(baseChunk),
-      } as CodeChunk;
+      };
     }).filter((chunk): chunk is CodeChunk => chunk !== null);
+
+    return { chunks, chunksSkipped };
   }
 
   private prepareSemanticText(chunk: Omit<CodeChunk, 'semantic_text' | 'code_vector' | 'created_at' | 'updated_at' | 'chunk_hash' | 'git_file_hash'>): string {
