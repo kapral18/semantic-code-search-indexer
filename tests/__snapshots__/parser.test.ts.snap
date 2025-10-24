@@ -315,6 +315,183 @@ apply plugin: 'java'
 ]
 `;
 
+exports[`LanguageParser should parse Handlebars fixtures correctly 1`] = `
+[
+  {
+    "chunk_hash": "61df66d98e9a0be833927914091c3502e00208e6c255dbbc7431f219b8231806",
+    "content": "{{! This is a comprehensive Handlebars test fixture }}
+
+{{! Original user example - YAML with Handlebars }}
+metricsets: ["broker"]
+hosts:
+{{#each hosts}}
+  - {{this}}
+{{/each}}
+path: {{path}}
+period: {{period}}
+username: {{username}}
+password: {{password}}
+tags:
+{{#each tags as |tag|}}
+  - {{tag}}
+{{/each}}
+{{#if ssl}}
+{{ssl}}
+{{/if}}
+{{#if processors}}
+processors:
+{{processors}}
+{{/if}}
+
+{{! Simple mustache expressions }}
+<div class="user">
+  <h1>{{title}}</h1>
+  <p>Welcome, {{userName}}!</p>
+  <p>Email: {{email}}</p>
+</div>
+
+{{! Block helpers - if/else }}
+{{#if isActive}}
+  <span class="active">Active User</span>
+{{else}}
+  <span class="inactive">Inactive User</span>
+{{/if}}
+
+{{! Block helpers - unless }}
+{{#unless isGuest}}
+  <button>Edit Profile</button>
+{{/unless}}
+
+{{! Block helpers - with }}
+{{#with user}}
+  <p>Name: {{firstName}} {{lastName}}</p>
+  <p>Age: {{age}}</p>
+{{/with}}
+
+{{! Nested blocks }}
+{{#if hasPermissions}}
+  {{#each permissions as |permission|}}
+    <li>{{permission.name}}: {{permission.level}}</li>
+  {{/each}}
+{{/if}}
+
+{{! Block parameters }}
+{{#each items as |item index|}}
+  <div data-index="{{index}}">
+    {{item.name}} - {{item.price}}
+  </div>
+{{/each}}
+
+{{! Partials }}
+{{> header}}
+{{> userProfile user=currentUser}}
+{{> footer}}
+
+{{! Path expressions }}
+<p>{{user.profile.address.city}}</p>
+<p>{{../parentContext}}</p>
+
+{{! Helper with arguments }}
+{{formatDate createdAt "YYYY-MM-DD"}}
+{{capitalize userName}}
+
+",
+    "created_at": "[TIMESTAMP]",
+    "directoryDepth": 2,
+    "directoryName": "fixtures",
+    "directoryPath": "tests/fixtures",
+    "endLine": 77,
+    "filePath": "tests/fixtures/handlebars.hbs",
+    "git_branch": "main",
+    "git_file_hash": "b995d509148672a617312f7e94fe3909d6a7ba4d",
+    "language": "handlebars",
+    "semantic_text": "filePath: tests/fixtures/handlebars.hbs
+directoryPath: tests/fixtures
+
+{{! This is a comprehensive Handlebars test fixture }}
+
+{{! Original user example - YAML with Handlebars }}
+metricsets: ["broker"]
+hosts:
+{{#each hosts}}
+  - {{this}}
+{{/each}}
+path: {{path}}
+period: {{period}}
+username: {{username}}
+password: {{password}}
+tags:
+{{#each tags as |tag|}}
+  - {{tag}}
+{{/each}}
+{{#if ssl}}
+{{ssl}}
+{{/if}}
+{{#if processors}}
+processors:
+{{processors}}
+{{/if}}
+
+{{! Simple mustache expressions }}
+<div class="user">
+  <h1>{{title}}</h1>
+  <p>Welcome, {{userName}}!</p>
+  <p>Email: {{email}}</p>
+</div>
+
+{{! Block helpers - if/else }}
+{{#if isActive}}
+  <span class="active">Active User</span>
+{{else}}
+  <span class="inactive">Inactive User</span>
+{{/if}}
+
+{{! Block helpers - unless }}
+{{#unless isGuest}}
+  <button>Edit Profile</button>
+{{/unless}}
+
+{{! Block helpers - with }}
+{{#with user}}
+  <p>Name: {{firstName}} {{lastName}}</p>
+  <p>Age: {{age}}</p>
+{{/with}}
+
+{{! Nested blocks }}
+{{#if hasPermissions}}
+  {{#each permissions as |permission|}}
+    <li>{{permission.name}}: {{permission.level}}</li>
+  {{/each}}
+{{/if}}
+
+{{! Block parameters }}
+{{#each items as |item index|}}
+  <div data-index="{{index}}">
+    {{item.name}} - {{item.price}}
+  </div>
+{{/each}}
+
+{{! Partials }}
+{{> header}}
+{{> userProfile user=currentUser}}
+{{> footer}}
+
+{{! Path expressions }}
+<p>{{user.profile.address.city}}</p>
+<p>{{../parentContext}}</p>
+
+{{! Helper with arguments }}
+{{formatDate createdAt "YYYY-MM-DD"}}
+{{capitalize userName}}
+
+",
+    "startLine": 1,
+    "type": "doc",
+    "updated_at": "[TIMESTAMP]",
+  },
+]
+`;
+
 exports[`LanguageParser should parse JSON fixtures correctly 1`] = `
 [
   {

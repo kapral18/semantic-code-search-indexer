@@ -11,7 +11,7 @@ describe('LanguageParser', () => {
   let parser: LanguageParser;
 
   beforeAll(() => {
-    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python,json,gradle,properties,text';
+    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python,json,gradle,properties,text,handlebars';
     parser = new LanguageParser();
   });
 
@@ -112,6 +112,44 @@ describe('LanguageParser', () => {
     const filePath = path.resolve(__dirname, 'fixtures/text.txt');
     const result = parser.parseFile(filePath, 'main', 'tests/fixtures/text.txt');
     expect(cleanTimestamps(result.chunks)).toMatchSnapshot();
+  });
+
+  it('should parse Handlebars fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/handlebars.hbs');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/handlebars.hbs');
+    expect(cleanTimestamps(result.chunks)).toMatchSnapshot();
+  });
+
+  it('should extract content from Handlebars fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/handlebars.hbs');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/handlebars.hbs');
+    
+    // Verify exactly one chunk was created (whole file approach)
+    expect(result.chunks.length).toBe(1);
+    
+    // Verify language is set correctly
+    expect(result.chunks[0].language).toBe('handlebars');
+    
+    // Verify parser type
+    expect(result.metrics.parserType).toBe('handlebars');
+    
+    // Verify both static content and Handlebars expressions are captured
+    const content = result.chunks[0].content;
+    expect(content).toContain('metricsets');
+    expect(content).toContain('{{');
+    expect(content).toContain('{{#each hosts}}');
+    expect(content).toContain('{{path}}');
+    
+    // Verify line numbers span the entire file
+    expect(result.chunks[0].startLine).toBe(1);
+    expect(result.chunks[0].endLine).toBeGreaterThan(1);
+  });
+
+  it('should recognize .hbs file extension', () => {
+    const hbsFile = path.resolve(__dirname, 'fixtures/handlebars.hbs');
+    const result = parser.parseFile(hbsFile, 'main', 'tests/fixtures/handlebars.hbs');
+    expect(result.chunks.length).toBeGreaterThan(0);
+    expect(result.chunks[0].language).toBe('handlebars');
   });
 
   it('should filter out chunks larger than maxChunkSizeBytes', () => {
