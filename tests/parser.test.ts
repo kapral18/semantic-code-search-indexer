@@ -7,11 +7,29 @@ import fs from 'fs';
 
 const MOCK_TIMESTAMP = '[TIMESTAMP]';
 
+// Supported languages for testing
+const TEST_LANGUAGES = [
+  'typescript',
+  'javascript',
+  'markdown',
+  'yaml',
+  'java',
+  'go',
+  'python',
+  'json',
+  'gradle',
+  'properties',
+  'text',
+  'handlebars',
+  'c',
+  'cpp',
+].join(',');
+
 describe('LanguageParser', () => {
   let parser: LanguageParser;
 
   beforeAll(() => {
-    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = 'typescript,javascript,markdown,yaml,java,go,python,json,gradle,properties,text,handlebars,cpp';
+    process.env.SEMANTIC_CODE_INDEXER_LANGUAGES = TEST_LANGUAGES;
     parser = new LanguageParser();
   });
 
@@ -249,6 +267,33 @@ Content 2`;
     const filePath = path.resolve(__dirname, 'fixtures/handlebars.hbs');
     const result = parser.parseFile(filePath, 'main', 'tests/fixtures/handlebars.hbs');
     expect(cleanTimestamps(result.chunks)).toMatchSnapshot();
+  });
+
+  it('should parse C fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/c.c');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/c.c');
+    expect(cleanTimestamps(result.chunks)).toMatchSnapshot();
+  });
+
+  it('should extract symbols from C fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, 'fixtures/c.c');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/c.c');
+    const allSymbols = result.chunks.flatMap(chunk => chunk.symbols);
+    expect(allSymbols).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'add', kind: 'function.name' }),
+        expect.objectContaining({ name: 'test_function', kind: 'function.name' }),
+        expect.objectContaining({ name: 'main', kind: 'function.name' }),
+        expect.objectContaining({ name: 'add', kind: 'function.call' }),
+        expect.objectContaining({ name: 'printf', kind: 'function.call' }),
+        expect.objectContaining({ name: 'Point', kind: 'struct.name' }),
+        expect.objectContaining({ name: 'Data', kind: 'union.name' }),
+        expect.objectContaining({ name: 'Color', kind: 'enum.name' }),
+        expect.objectContaining({ name: 'Point_t', kind: 'type.name' }),
+        expect.objectContaining({ name: 'global_var', kind: 'variable.name' }),
+        expect.objectContaining({ name: 'point', kind: 'variable.name' }),
+      ])
+    );
   });
 
   it('should extract content from Handlebars fixtures correctly', () => {
