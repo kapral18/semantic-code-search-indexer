@@ -3,7 +3,7 @@ import Parser from 'tree-sitter';
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { languageConfigurations, parseLanguageNames } from '../languages';
 import { CodeChunk, SymbolInfo, ExportInfo } from './elasticsearch';
 import { indexingConfig } from '../config';
@@ -147,7 +147,7 @@ export class LanguageParser {
   private readFileWithMetadata(filePath: string): FileMetadata {
     return {
       content: fs.readFileSync(filePath, 'utf8'),
-      gitFileHash: execSync(`git hash-object ${filePath}`).toString().trim(),
+      gitFileHash: execFileSync('git', ['hash-object', filePath]).toString().trim(),
       timestamp: new Date().toISOString(),
     };
   }
@@ -510,7 +510,7 @@ export class LanguageParser {
     const tree = parser.parse(sourceCode);
     const query = new Query(langConfig.parser, langConfig.queries.join('\n'));
     const matches = query.matches(tree.rootNode);
-    const gitFileHash = execSync(`git hash-object ${filePath}`).toString().trim();
+    const gitFileHash = execFileSync('git', ['hash-object', filePath]).toString().trim();
 
     // Tree-sitter capture names for imports and exports
     const IMPORT_CAPTURE_NAMES = {
