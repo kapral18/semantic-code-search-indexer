@@ -667,6 +667,60 @@ Third paragraph`;
       );
     });
 
+    it('should respect Python __all__ when present', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/python_with_all.py');
+      const result = parser.parseFile(filePath, 'main', 'tests/fixtures/python_with_all.py');
+      
+      const allExports = result.chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Should only export items in __all__
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'public_function', type: 'named' }),
+          expect.objectContaining({ name: 'PublicClass', type: 'named' }),
+        ])
+      );
+      
+      // Should NOT export items not in __all__
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: '_private_helper' }),
+        ])
+      );
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'SECRET_CONSTANT' }),
+        ])
+      );
+      
+      // Verify we have exactly 2 exports
+      expect(allExports.length).toBe(2);
+    });
+
+    it('should handle Python __all__ with trailing commas and multiline', () => {
+      const filePath = path.resolve(__dirname, 'fixtures/python_all_edge_cases.py');
+      const result = parser.parseFile(filePath, 'main', 'tests/fixtures/python_all_edge_cases.py');
+      
+      const allExports = result.chunks.flatMap(chunk => chunk.exports || []);
+      
+      // Should handle trailing commas and multiline __all__
+      expect(allExports).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'function_one', type: 'named' }),
+          expect.objectContaining({ name: 'ClassTwo', type: 'named' }),
+        ])
+      );
+      
+      // Should not export items not in __all__
+      expect(allExports).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'not_exported' }),
+        ])
+      );
+      
+      expect(allExports.length).toBe(2);
+    });
+
     it('should extract Java public exports correctly', () => {
       const filePath = path.resolve(__dirname, 'fixtures/java.java');
       const result = parser.parseFile(filePath, 'main', 'tests/fixtures/java.java');

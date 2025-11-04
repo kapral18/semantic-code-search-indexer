@@ -575,6 +575,42 @@ export class LanguageParser {
       }
     }
 
+    // For Python, check if __all__ is defined and use it as the authoritative export list
+    let pythonAllList: string[] | null = null;
+    if (langConfig.name === 'python') {
+      try {
+        const allQuery = new Query(
+          langConfig.parser,
+          '(assignment left: (identifier) @all_name (#eq? @all_name "__all__") right: (list) @all_list)'
+        );
+        const allMatches = allQuery.matches(tree.rootNode);
+
+        if (allMatches.length > 0) {
+          // Use the last __all__ assignment if there are multiple
+          const lastMatch = allMatches[allMatches.length - 1];
+          const listNode = lastMatch.captures.find(c => c.name === 'all_list')?.node;
+          if (listNode) {
+            pythonAllList = [];
+            // Extract string literals from the list
+            for (let i = 0; i < listNode.namedChildCount; i++) {
+              const child = listNode.namedChild(i);
+              if (child && child.type === 'string') {
+                // String has 3 children: string_start, string_content, string_end
+                const stringContent = child.child(1);
+                if (stringContent && stringContent.type === 'string_content') {
+                  pythonAllList.push(stringContent.text);
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn(`Failed to parse Python __all__: ${error instanceof Error ? error.message : String(error)}`);
+        // Fall back to pattern-based detection
+        pythonAllList = null;
+      }
+    }
+
     const exportsByLine: { [line: number]: ExportInfo[] } = {};
     if (langConfig.exportQueries) {
       const exportQuery = new Query(langConfig.parser, langConfig.exportQueries.join('\n'));
@@ -618,6 +654,13 @@ export class LanguageParser {
         }
 
         if (exportName || exportType === 'namespace') {
+          // For Python, filter exports based on __all__ if it exists
+          if (langConfig.name === 'python' && pythonAllList !== null) {
+            if (!pythonAllList.includes(exportName)) {
+              continue; // Skip this export - not in __all__
+            }
+          }
+
           const line = match.captures[0].node.startPosition.row + 1;
           if (!exportsByLine[line]) {
             exportsByLine[line] = [];
