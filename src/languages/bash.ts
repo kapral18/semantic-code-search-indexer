@@ -9,7 +9,7 @@ import { LanguageConfiguration } from '../utils/parser';
  */
 export const bashConfig: LanguageConfiguration = {
   name: 'bash',
-  fileSuffixes: ['.sh', '.bash', '.zsh'],
+  fileSuffixes: ['.sh', '.bash', '.zsh', '.ksh', '.bats'],
   parser: bash,
 
   queries: [
