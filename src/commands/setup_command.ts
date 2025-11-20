@@ -28,3 +28,5 @@ export const setupCommand = new Command('setup')
   .argument('<repo_url>', 'The URL of the git repository to clone')
   .option('--token <token>', 'GitHub token for private repositories')
   .action(setup);
+
+export { setup };
