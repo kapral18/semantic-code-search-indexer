@@ -381,3 +381,5 @@ export const indexCommand = new Command('index')
       throw error;
     }
   });
+
+export { indexRepos };

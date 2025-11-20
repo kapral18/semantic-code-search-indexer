@@ -17,7 +17,10 @@
     "queue:retry-failed": "ts-node src/index.ts queue:retry-failed",
     "queue:list-failed": "ts-node src/index.ts queue:list-failed",
     "dump-tree": "ts-node src/index.ts dump-tree",
-    "test": "jest",
+    "test": "jest --testPathIgnorePatterns=tests/integration",
+    "test:unit": "jest --testPathIgnorePatterns=tests/integration",
+    "test:integration": "jest tests/integration/basic.integration.test.ts",
+    "test:all": "jest",
     "prepare": "husky"
   },
   "keywords": [],
