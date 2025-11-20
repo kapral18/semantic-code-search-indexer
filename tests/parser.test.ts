@@ -338,7 +338,7 @@ Content 2`;
   it('should extract symbols from C fixtures correctly', () => {
     const filePath = path.resolve(__dirname, 'fixtures/c.c');
     const result = parser.parseFile(filePath, 'main', 'tests/fixtures/c.c');
-    const allSymbols = result.chunks.flatMap(chunk => chunk.symbols);
+    const allSymbols = result.chunks.flatMap((chunk) => chunk.symbols);
     expect(allSymbols).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'add', kind: 'function.name' }),
@@ -395,7 +395,7 @@ Content 2`;
   it('should extract symbols from Bash fixtures correctly', () => {
     const filePath = path.resolve(__dirname, 'fixtures/bash.sh');
     const result = parser.parseFile(filePath, 'main', 'tests/fixtures/bash.sh');
-    const allSymbols = result.chunks.flatMap(chunk => chunk.symbols);
+    const allSymbols = result.chunks.flatMap((chunk) => chunk.symbols);
     expect(allSymbols).toEqual(
       expect.arrayContaining([
         // Function names
@@ -407,7 +407,7 @@ Content 2`;
         expect.objectContaining({ name: 'parse_args', kind: 'function.name' }),
         expect.objectContaining({ name: 'show_help', kind: 'function.name' }),
         expect.objectContaining({ name: 'main', kind: 'function.name' }),
-        
+
         // Variable names
         expect.objectContaining({ name: 'SCRIPT_DIR', kind: 'variable.name' }),
         expect.objectContaining({ name: 'VERSION', kind: 'variable.name' }),
@@ -422,13 +422,73 @@ Content 2`;
   it('should extract imports from Bash fixtures correctly', () => {
     const filePath = path.resolve(__dirname, 'fixtures/bash.sh');
     const result = parser.parseFile(filePath, 'main', 'tests/fixtures/bash.sh');
-    const allImports = result.chunks.flatMap(chunk => chunk.imports);
+    const allImports = result.chunks.flatMap((chunk) => chunk.imports);
     expect(allImports).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ path: expect.stringContaining('utils.sh') }),
         expect.objectContaining({ path: expect.stringContaining('helpers.sh') }),
       ])
     );
+  });
+
+  it('should filter Bash exports correctly (export vs readonly/local)', () => {
+    const testScript = `export EXPORTED_VAR="exported"
+readonly READONLY_VAR="readonly"
+local LOCAL_VAR="local"`;
+    const tempFile = path.join(__dirname, 'temp_bash_export_test.sh');
+    fs.writeFileSync(tempFile, testScript);
+
+    try {
+      const result = parser.parseFile(tempFile, 'main', 'temp_bash_export_test.sh');
+      const allExports = result.chunks.flatMap((chunk) => chunk.exports);
+
+      // Get unique export names
+      const uniqueExports = Array.from(new Set(allExports.map((e) => e?.name)));
+
+      // Should only capture EXPORTED_VAR, not READONLY_VAR or LOCAL_VAR
+      expect(uniqueExports).toHaveLength(1);
+      expect(uniqueExports[0]).toBe('EXPORTED_VAR');
+    } finally {
+      fs.unlinkSync(tempFile);
+    }
+  });
+
+  it('should capture array subscript variables in Bash', () => {
+    const testScript = `arr=(one two three)
+echo \${arr[@]}
+echo \${arr[0]}`;
+    const tempFile = path.join(__dirname, 'temp_bash_array_test.sh');
+    fs.writeFileSync(tempFile, testScript);
+
+    try {
+      const result = parser.parseFile(tempFile, 'main', 'temp_bash_array_test.sh');
+      const allSymbols = result.chunks.flatMap((chunk) => chunk.symbols);
+      const arrUsages = allSymbols.filter((s) => s?.name === 'arr' && s?.kind === 'variable.usage');
+
+      // Should capture arr from both ${arr[@]} and ${arr[0]}
+      expect(arrUsages.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      fs.unlinkSync(tempFile);
+    }
+  });
+
+  it('should handle export -f for Bash functions', () => {
+    const testScript = `function my_func() {
+    echo "test"
+}
+export -f my_func`;
+    const tempFile = path.join(__dirname, 'temp_bash_export_f_test.sh');
+    fs.writeFileSync(tempFile, testScript);
+
+    try {
+      const result = parser.parseFile(tempFile, 'main', 'temp_bash_export_f_test.sh');
+      const allExports = result.chunks.flatMap((chunk) => chunk.exports);
+
+      // Should capture my_func from 'export -f my_func'
+      expect(allExports.some((e) => e?.name === 'my_func')).toBe(true);
+    } finally {
+      fs.unlinkSync(tempFile);
+    }
   });
 
   it('should filter out chunks larger than maxChunkSizeBytes', () => {
