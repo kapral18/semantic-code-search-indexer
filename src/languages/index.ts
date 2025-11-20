@@ -15,7 +15,11 @@ import { cConfig } from './c';
 import { cppConfig } from './cpp';
 import { bashConfig } from './bash';
 import { LanguageConfiguration } from '../utils/parser';
-import { validateLanguageConfiguration, validateLanguageConfigurations, ValidationError } from '../utils/language_validator';
+import {
+  validateLanguageConfiguration,
+  validateLanguageConfigurations,
+  ValidationError,
+} from '../utils/language_validator';
 
 export const languageConfigurations = {
   typescript,
@@ -58,10 +62,10 @@ export function parseLanguageNames(languagesEnv?: string): LanguageName[] {
 
   const parsed = languageString
     .split(',')
-    .map(name => name.trim())
-    .filter(name => name.length > 0);
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
 
-  const invalid = parsed.filter(name => !(name in languageConfigurations));
+  const invalid = parsed.filter((name) => !(name in languageConfigurations));
   if (invalid.length > 0) {
     console.warn(`Invalid language names ignored: ${invalid.join(', ')}`);
   }
@@ -71,7 +75,7 @@ export function parseLanguageNames(languagesEnv?: string): LanguageName[] {
 
 /**
  * Validates and registers a new language configuration
- * 
+ *
  * @param config - The language configuration to register
  * @param existingConfigs - Existing configurations to check against
  * @returns Validation errors if any, empty array if valid
@@ -83,7 +87,7 @@ export function registerLanguage(
   const errors = validateLanguageConfiguration(config, existingConfigs);
   if (errors.length > 0) {
     console.warn(`Language configuration "${config.name}" has validation errors:`);
-    errors.forEach(error => {
+    errors.forEach((error) => {
       console.warn(`  - ${error.field}: ${error.message}`);
     });
   }
@@ -93,7 +97,7 @@ export function registerLanguage(
 /**
  * Validates all language configurations on startup
  * Logs warnings for any invalid configurations but does not prevent startup
- * 
+ *
  * @returns Object mapping language names to their validation errors
  */
 export function validateAllLanguageConfigurations(): Record<string, ValidationError[]> {
@@ -101,19 +105,19 @@ export function validateAllLanguageConfigurations(): Record<string, ValidationEr
   for (const [key, value] of Object.entries(languageConfigurations)) {
     configs[key] = value;
   }
-  
+
   const results = validateLanguageConfigurations(configs);
-  
+
   if (Object.keys(results).length > 0) {
     console.warn('Language configuration validation warnings:');
     Object.entries(results).forEach(([name, errors]) => {
       console.warn(`\n  Language: ${name}`);
-      errors.forEach(error => {
+      errors.forEach((error) => {
         console.warn(`    - ${error.field}: ${error.message}`);
       });
     });
   }
-  
+
   return results;
 }
 

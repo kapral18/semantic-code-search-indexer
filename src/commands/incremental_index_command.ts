@@ -1,9 +1,4 @@
-import { Command } from 'commander';
-import {
-  getLastIndexedCommit,
-  updateLastIndexedCommit,
-  deleteDocumentsByFilePath,
-} from '../utils/elasticsearch';
+import { getLastIndexedCommit, deleteDocumentsByFilePath } from '../utils/elasticsearch';
 import { SUPPORTED_FILE_EXTENSIONS } from '../utils/constants';
 import { indexingConfig, appConfig } from '../config';
 import path from 'path';
@@ -22,19 +17,16 @@ import {
   LANGUAGE_UNKNOWN,
 } from '../utils/constants';
 
-
-
-interface IncrementalIndexOptions {
+export interface IncrementalIndexOptions {
   queueDir: string;
-  elasticsearchIndex: string;
+  elasticsearchIndex?: string;
   token?: string;
   repoName?: string;
   branch?: string;
 }
 
-async function getQueue(options?: IncrementalIndexOptions, repoName?: string, branch?: string): Promise<IQueue> {
-  const queueDir = options?.queueDir ?? appConfig.queueDir;
-  const queuePath = path.join(queueDir, 'queue.db');
+async function getQueue(options: IncrementalIndexOptions, repoName?: string, branch?: string): Promise<IQueue> {
+  const queuePath = path.join(options.queueDir, 'queue.db');
   const queue = new SqliteQueue({
     dbPath: queuePath,
     repoName,
@@ -44,16 +36,19 @@ async function getQueue(options?: IncrementalIndexOptions, repoName?: string, br
   return queue;
 }
 
-export async function incrementalIndex(directory: string, options?: IncrementalIndexOptions) {
+export async function incrementalIndex(directory: string, options: IncrementalIndexOptions) {
   const repoName = options?.repoName ?? path.basename(path.resolve(directory));
-  
+
   const git = simpleGit(directory);
-  const gitBranch = options?.branch ?? await git.revparse(['--abbrev-ref', 'HEAD']);
+  const gitBranch = options?.branch ?? (await git.revparse(['--abbrev-ref', 'HEAD']));
 
   const logger = createLogger({ name: repoName, branch: gitBranch });
   const metrics = createMetrics({ name: repoName, branch: gitBranch });
 
-  logger.info('Starting incremental indexing process (Producer)', { directory, ...options });
+  logger.info('Starting incremental indexing process', {
+    directory,
+    ...options,
+  });
 
   const lastCommitHash = await getLastIndexedCommit(gitBranch, options?.elasticsearchIndex);
 
@@ -86,7 +81,9 @@ export async function incrementalIndex(directory: string, options?: IncrementalI
     if (error instanceof Error) {
       logger.error('Failed to pull latest changes.', { error: error.message });
     } else {
-      logger.error('Failed to pull latest changes with an unknown error.', { error });
+      logger.error('Failed to pull latest changes with an unknown error.', {
+        error,
+      });
     }
     return;
   }
@@ -94,9 +91,7 @@ export async function incrementalIndex(directory: string, options?: IncrementalI
   const gitRoot = await git.revparse(['--show-toplevel']);
   const changedFilesRaw = await git.diff(['--name-status', lastCommitHash, 'HEAD']);
 
-  const changedFiles = changedFilesRaw
-    .split('\n')
-    .filter(line => line);
+  const changedFiles = changedFilesRaw.split('\n').filter((line) => line);
 
   const filesToDelete: string[] = [];
   const filesToIndex: string[] = [];
@@ -105,14 +100,16 @@ export async function incrementalIndex(directory: string, options?: IncrementalI
     const parts = line.split('\t');
     const status = parts[0];
 
-    if (status.startsWith('R')) { // Handle Rename (RXXX)
+    if (status.startsWith('R')) {
+      // Handle Rename (RXXX)
       const oldFile = parts[1];
       const newFile = parts[2];
       filesToDelete.push(oldFile);
       if (SUPPORTED_FILE_EXTENSIONS.includes(path.extname(newFile))) {
         filesToIndex.push(newFile);
       }
-    } else if (status.startsWith('C')) { // Handle Copy (CXXX)
+    } else if (status.startsWith('C')) {
+      // Handle Copy (CXXX)
       const newFile = parts[2];
       if (SUPPORTED_FILE_EXTENSIONS.includes(path.extname(newFile))) {
         filesToIndex.push(newFile);
@@ -121,10 +118,10 @@ export async function incrementalIndex(directory: string, options?: IncrementalI
       const file = parts[1];
       filesToDelete.push(file);
     } else if (status === 'A') {
-        const file = parts[1];
-        if (SUPPORTED_FILE_EXTENSIONS.includes(path.extname(file))) {
-            filesToIndex.push(file);
-        }
+      const file = parts[1];
+      if (SUPPORTED_FILE_EXTENSIONS.includes(path.extname(file))) {
+        filesToIndex.push(file);
+      }
     } else if (status === 'M') {
       const file = parts[1];
       if (SUPPORTED_FILE_EXTENSIONS.includes(path.extname(file))) {
@@ -157,95 +154,101 @@ export async function incrementalIndex(directory: string, options?: IncrementalI
 
     const producerWorkerPath = path.join(process.cwd(), 'dist', 'utils', 'producer_worker.js');
 
-    filesToIndex.forEach(file => {
-      producerQueue.add(() => new Promise<void>((resolve, reject) => {
-        const worker = new Worker(producerWorkerPath, {
-          workerData: { repoName, gitBranch },
-        });
-        const absolutePath = path.resolve(gitRoot, file);
-        worker.on('message', async (message) => {
-          if (message.status === MESSAGE_STATUS_SUCCESS) {
-            successCount++;
-            
-            // Record parser metrics from worker
-            if (message.metrics && metrics.parser) {
-              const attrs = createAttributes(metrics, {
-                language: message.metrics.language,
-                parser_type: message.metrics.parserType,
-              });
-              
-              if (message.metrics.filesProcessed > 0) {
-                metrics.parser.filesProcessed.add(message.metrics.filesProcessed, {
-                  ...attrs,
-                  status: METRIC_STATUS_SUCCESS,
+    filesToIndex.forEach((file) => {
+      producerQueue.add(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            const worker = new Worker(producerWorkerPath, {
+              workerData: { repoName, gitBranch },
+            });
+            const absolutePath = path.resolve(gitRoot, file);
+            worker.on('message', async (message) => {
+              if (message.status === MESSAGE_STATUS_SUCCESS) {
+                successCount++;
+
+                // Record parser metrics from worker
+                if (message.metrics && metrics.parser) {
+                  const attrs = createAttributes(metrics, {
+                    language: message.metrics.language,
+                    parser_type: message.metrics.parserType,
+                  });
+
+                  if (message.metrics.filesProcessed > 0) {
+                    metrics.parser.filesProcessed.add(message.metrics.filesProcessed, {
+                      ...attrs,
+                      status: METRIC_STATUS_SUCCESS,
+                    });
+                  }
+
+                  if (message.metrics.chunksCreated > 0) {
+                    metrics.parser.chunksCreated.add(message.metrics.chunksCreated, attrs);
+                  }
+
+                  if (message.metrics.chunksSkipped > 0) {
+                    metrics.parser.chunksSkipped?.add(message.metrics.chunksSkipped, {
+                      ...attrs,
+                      size: 'oversized',
+                    });
+                  }
+
+                  message.metrics.chunkSizes.forEach((size: number) => {
+                    metrics.parser?.chunkSize.record(size, attrs);
+                  });
+                }
+
+                if (message.data.length > 0) {
+                  await workQueue.enqueue(message.data);
+                }
+              } else if (message.status === MESSAGE_STATUS_FAILURE) {
+                failureCount++;
+
+                // Record failure metric
+                if (message.metrics && metrics.parser && message.metrics.filesFailed > 0) {
+                  metrics.parser.filesFailed.add(
+                    message.metrics.filesFailed,
+                    createAttributes(metrics, {
+                      language: message.metrics.language || LANGUAGE_UNKNOWN,
+                      status: METRIC_STATUS_FAILURE,
+                    })
+                  );
+                }
+
+                logger.warn('Failed to parse file', {
+                  file: message.filePath,
+                  error: message.error,
                 });
               }
-              
-              if (message.metrics.chunksCreated > 0) {
-                metrics.parser.chunksCreated.add(message.metrics.chunksCreated, attrs);
-              }
-              
-              if (message.metrics.chunksSkipped > 0) {
-                metrics.parser.chunksSkipped?.add(message.metrics.chunksSkipped, {
-                  ...attrs,
-                  size: 'oversized',
-                });
-              }
-              
-              message.metrics.chunkSizes.forEach((size: number) => {
-                metrics.parser?.chunkSize.record(size, attrs);
-              });
-            }
-            
-            if (message.data.length > 0) {
-              await workQueue.enqueue(message.data);
-            }
-          } else if (message.status === MESSAGE_STATUS_FAILURE) {
-            failureCount++;
-            
-            // Record failure metric
-            if (message.metrics && metrics.parser && message.metrics.filesFailed > 0) {
-              metrics.parser.filesFailed.add(message.metrics.filesFailed, createAttributes(metrics, {
-                language: message.metrics.language || LANGUAGE_UNKNOWN,
-                status: METRIC_STATUS_FAILURE,
-              }));
-            }
-            
-            logger.warn('Failed to parse file', { file: message.filePath, error: message.error });
-          }
-          worker.terminate();
-          resolve();
-        });
-        worker.on('error', err => {
-          failureCount++;
-          logger.error('Worker thread error', { file, error: err.message });
-          worker.terminate();
-          reject(err);
-        });
-        const relativePath = file;
-        worker.postMessage({ filePath: absolutePath, gitBranch, relativePath });
-      }));
+              worker.terminate();
+              resolve();
+            });
+            worker.on('error', (err) => {
+              failureCount++;
+              logger.error('Worker thread error', { file, error: err.message });
+              worker.terminate();
+              reject(err);
+            });
+            const relativePath = file;
+            worker.postMessage({
+              filePath: absolutePath,
+              gitBranch,
+              relativePath,
+            });
+          })
+      );
     });
 
     await producerQueue.onIdle();
 
-    logger.info('--- Incremental Producer Summary (Additions/Modifications) ---');
+    logger.info('--- Incremental Indexing Summary (Additions/Modifications) ---');
     logger.info(`Successfully processed: ${successCount} files`);
     logger.info(`Failed to parse:      ${failureCount} files`);
   }
 
   const newCommitHash = await git.revparse(['HEAD']);
-  await updateLastIndexedCommit(gitBranch, newCommitHash, options?.elasticsearchIndex);
 
   logger.info('---');
   logger.info(`New HEAD commit hash: ${newCommitHash}`);
   logger.info('---');
   logger.info('Incremental file parsing and enqueueing complete.');
+  logger.info('Note: Commit hash will be updated after worker completes successfully.');
 }
-
-
-
-export const incrementalIndexCommand = new Command('incremental-index')
-  .description('Incrementally index a directory')
-  .argument('[directory]', 'The directory to index', '.')
-  .action(incrementalIndex);

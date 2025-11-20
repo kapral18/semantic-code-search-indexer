@@ -131,4 +131,3 @@ describe('parseLanguageNames', () => {
     expect(allLanguages).toContain('bash');
   });
 });
-
