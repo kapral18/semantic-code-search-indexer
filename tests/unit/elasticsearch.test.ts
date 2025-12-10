@@ -56,7 +56,7 @@ describe('indexCodeChunks', () => {
     elasticsearch.setClient(undefined);
   });
 
-  it('should not throw when bulk indexing succeeds', async () => {
+  it('should return all chunks as succeeded when bulk indexing succeeds', async () => {
     const mockBulkResponse = {
       errors: false,
       items: [
@@ -73,12 +73,15 @@ describe('indexCodeChunks', () => {
     mockBulk.mockResolvedValue(mockBulkResponse);
 
     const chunks = [MOCK_CHUNK];
+    const result = await elasticsearch.indexCodeChunks(chunks);
 
-    await expect(elasticsearch.indexCodeChunks(chunks)).resolves.not.toThrow();
+    expect(result.succeeded).toHaveLength(1);
+    expect(result.failed).toHaveLength(0);
+    expect(result.succeeded[0].chunk_hash).toBe('chunk_hash_1');
     expect(mockBulk).toHaveBeenCalledTimes(1);
   });
 
-  it('should throw error when bulk indexing fails', async () => {
+  it('should return failed chunks when bulk indexing has errors', async () => {
     const mockBulkResponse = {
       errors: true,
       items: [
@@ -97,14 +100,19 @@ describe('indexCodeChunks', () => {
     mockBulk.mockResolvedValue(mockBulkResponse);
 
     const chunks = [MOCK_CHUNK];
+    const result = await elasticsearch.indexCodeChunks(chunks);
 
-    await expect(elasticsearch.indexCodeChunks(chunks)).rejects.toThrow(
-      /Bulk indexing failed: 1 of 1 documents had errors/
-    );
+    expect(result.succeeded).toHaveLength(0);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].chunk.chunk_hash).toBe('chunk_hash_1');
+    expect(result.failed[0].error).toEqual({
+      type: 'mapper_parsing_exception',
+      reason: 'failed to parse field [semantic_text]',
+    });
     expect(mockBulk).toHaveBeenCalledTimes(1);
   });
 
-  it('should include first error details in error message', async () => {
+  it('should include error details in failed results', async () => {
     const mockBulkResponse = {
       errors: true,
       items: [
@@ -124,21 +132,17 @@ describe('indexCodeChunks', () => {
     mockBulk.mockResolvedValue(mockBulkResponse);
 
     const chunks = [MOCK_CHUNK];
+    const result = await elasticsearch.indexCodeChunks(chunks);
 
-    try {
-      await elasticsearch.indexCodeChunks(chunks);
-      expect.fail('Expected indexCodeChunks to throw an error');
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-      if (error instanceof Error) {
-        expect(error.message).toContain('Bulk indexing failed: 1 of 1 documents had errors');
-        expect(error.message).toContain('index_not_found_exception');
-        expect(error.message).toContain('no such index [missing-index]');
-      }
-    }
+    expect(result.succeeded).toHaveLength(0);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toMatchObject({
+      type: 'index_not_found_exception',
+      reason: 'no such index [missing-index]',
+    });
   });
 
-  it('should handle multiple errors and report count correctly', async () => {
+  it('should separate succeeded and failed documents in partial failure', async () => {
     const mockChunk2: CodeChunk = {
       ...MOCK_CHUNK,
       chunk_hash: 'chunk_hash_2',
@@ -185,21 +189,23 @@ describe('indexCodeChunks', () => {
     mockBulk.mockResolvedValue(mockBulkResponse);
 
     const chunks = [MOCK_CHUNK, mockChunk2, mockChunk3];
+    const result = await elasticsearch.indexCodeChunks(chunks);
 
-    try {
-      await elasticsearch.indexCodeChunks(chunks);
-      expect.fail('Expected indexCodeChunks to throw an error');
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-      if (error instanceof Error) {
-        expect(error.message).toContain('Bulk indexing failed: 2 of 3 documents had errors');
-        expect(error.message).toContain('mapper_parsing_exception');
-      }
-    }
+    // First chunk succeeded
+    expect(result.succeeded).toHaveLength(1);
+    expect(result.succeeded[0].chunk_hash).toBe('chunk_hash_1');
+
+    // Second and third chunks failed
+    expect(result.failed).toHaveLength(2);
+    expect(result.failed[0].chunk.chunk_hash).toBe('chunk_hash_2');
+    expect(result.failed[1].chunk.chunk_hash).toBe('chunk_hash_3');
   });
 
-  it('should return early when chunks array is empty', async () => {
-    await elasticsearch.indexCodeChunks([]);
+  it('should return empty arrays when chunks array is empty', async () => {
+    const result = await elasticsearch.indexCodeChunks([]);
+
+    expect(result.succeeded).toHaveLength(0);
+    expect(result.failed).toHaveLength(0);
     expect(mockBulk).not.toHaveBeenCalled();
   });
 
@@ -222,10 +228,25 @@ describe('indexCodeChunks', () => {
     mockBulk.mockResolvedValue(mockBulkResponse);
 
     const chunks = [MOCK_CHUNK];
+    const result = await elasticsearch.indexCodeChunks(chunks);
 
-    await expect(elasticsearch.indexCodeChunks(chunks)).rejects.toThrow(
-      /Bulk indexing failed: 1 of 1 documents had errors/
-    );
+    expect(result.succeeded).toHaveLength(0);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toMatchObject({
+      type: 'version_conflict_engine_exception',
+    });
+  });
+
+  it('should return all chunks as failed on network/connection error', async () => {
+    mockBulk.mockRejectedValue(new Error('Connection refused'));
+
+    const chunks = [MOCK_CHUNK];
+    const result = await elasticsearch.indexCodeChunks(chunks);
+
+    expect(result.succeeded).toHaveLength(0);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].chunk.chunk_hash).toBe('chunk_hash_1');
+    expect(result.failed[0].error).toBeInstanceOf(Error);
   });
 });
 
