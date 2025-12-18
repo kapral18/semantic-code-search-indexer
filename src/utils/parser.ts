@@ -27,6 +27,8 @@ import {
 
 const { Query } = Parser;
 
+const SHARED_EXTENSIONS = new Set(['.h']);
+
 /**
  * Extracts directory information from a file path.
  * @param filePath The relative file path
@@ -122,7 +124,7 @@ export class LanguageParser {
       for (const suffix of config.fileSuffixes) {
         // Check for duplicate file suffix during map creation
         const existing = this.fileSuffixMap.get(suffix);
-        if (existing) {
+        if (existing && !SHARED_EXTENSIONS.has(suffix)) {
           logger.warn(
             `File extension "${suffix}" is registered to both "${existing.name}" and "${config.name}". ` +
               `Using "${config.name}".`
