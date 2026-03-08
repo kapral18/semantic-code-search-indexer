@@ -1,0 +1,97 @@
+language: en-US
+
+knowledge_base:
+  # Link the MCP server repo so reviews can catch cross-repo breaking changes.
+  # Schema allows maxItems: 1.
+  linked_repositories:
+    - repository: elastic/semantic-code-search-mcp-server
+      instructions: |
+        This indexer and the MCP server are coupled.
+        When PRs change index mappings, document shape, APIs, or auth/config semantics, cross-check the MCP server expectations and CALL OUT any potential incompatibilities or breaking changes in the review/summary.
+        Do not make changes in the MCP server repo as part of this PR; treat it as a reference only.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+
+  high_level_summary: false
+  high_level_summary_in_walkthrough: false
+
+  review_status: false
+  review_details: false
+  commit_status: true
+  fail_commit_status: false
+
+  collapse_walkthrough: true
+  changed_files_summary: false
+  sequence_diagrams: true
+  estimate_code_review_effort: false
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: false
+  auto_apply_labels: false
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+
+  in_progress_fortune: false
+  poem: false
+
+  enable_prompt_for_ai_agents: false
+
+  # Keep reviews focused on authored source, not generated/large vendor dirs.
+  path_filters:
+    - '!dist/**'
+    - '!node_modules/**'
+    - '!.repos/**'
+    - '!.queues/**'
+    - '!coverage/**'
+    - '!**/*.min.*'
+    - '!**/*.map'
+
+  path_instructions:
+    - path: 'src/**/*.ts'
+      instructions: |
+        Focus on correctness, determinism, and performance under high-throughput indexing.
+        Verify:
+        - Robust error handling and actionable errors (include enough context, avoid noisy logs)
+        - Concurrency safety (queues, worker pools, retries, cancellation)
+        - Elasticsearch bulk indexing semantics and partial-failure handling
+        - Avoid unbounded memory growth (streams, batching, large file handling)
+        - MCP server compatibility: if indexed document shape, index naming, or query semantics change, validate assumptions against `elastic/semantic-code-search-mcp-server` and explicitly flag any breaking change risk
+    - path: 'tests/**/*.ts'
+      instructions: |
+        Prefer stable tests (no time/locale dependencies, no brittle snapshots).
+        Ensure assertions validate behavior, not incidental implementation details.
+        For integration tests, keep setup/teardown idempotent and always-run teardown.
+    - path: '.github/workflows/**'
+      instructions: |
+        Review for least-privilege permissions, pinned action SHAs, and caching correctness.
+        Ensure CI steps match local scripts (`npm ci`, `npm run lint`, `npm run build`, `npm test`).
+    - path: 'scripts/**/*.sh'
+      instructions: |
+        Prefer strict mode where safe, quote variables, and ensure scripts are idempotent.
+        Avoid non-portable bashisms unless the script explicitly requires bash.
+    - path: 'Dockerfile'
+      instructions: |
+        Check for reproducible builds, minimal layers, and avoiding leaking build secrets.
+        Prefer non-root runtime where feasible and validate copied artifacts/permissions.
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 5
+    drafts: true
+    ignore_title_keywords:
+      - 'wip'
+      - 'do not review'
+      - 'skip review'
+      - 'draft'
+
+finishing_touches:
+  unit_tests:
+    enabled: false
+  docstrings:
+    enabled: false
+  simplify:
+    enabled: false
