@@ -4,6 +4,7 @@ import type { Mock } from 'vitest';
 
 import * as elasticsearch from '../../src/utils/elasticsearch';
 import { CodeChunk } from '../../src/utils/elasticsearch';
+import { withTestEnv } from './utils/test_env';
 
 const MOCK_CHUNK: CodeChunk = {
   type: 'code',
@@ -268,10 +269,16 @@ describe('Elasticsearch Client Configuration', () => {
       expect(elasticsearch.elasticsearchConfig).toBeDefined();
     });
 
-    it('SHOULD have inference ID configured', () => {
-      expect(elasticsearch.elasticsearchConfig.inferenceId).toBeDefined();
-      expect(typeof elasticsearch.elasticsearchConfig.inferenceId).toBe('string');
-    });
+    it('SHOULD require SCS_IDXR_ELASTICSEARCH_INFERENCE_ID when semantic_text is enabled', () =>
+      // undefined = delete the var, which enables semantic_text (it's only disabled when explicitly truthy e.g. 'true' or '1')
+      withTestEnv(
+        { SCS_IDXR_DISABLE_SEMANTIC_TEXT: undefined, SCS_IDXR_ELASTICSEARCH_INFERENCE_ID: undefined },
+        async () => {
+          await expect(elasticsearch.createIndex('test-index')).rejects.toThrow(
+            'SCS_IDXR_ELASTICSEARCH_INFERENCE_ID is required'
+          );
+        }
+      ));
 
     it('SHOULD prioritize ELASTICSEARCH_CLOUD_ID over ELASTICSEARCH_ENDPOINT when both are set', () => {
       // This validates our configuration logic by checking what was actually used
@@ -299,5 +306,77 @@ describe('Elasticsearch Client Configuration', () => {
         expect(hasApiKey || hasUsernamePassword).toBe(true);
       }
     });
+  });
+});
+
+describe('indexHasSemanticTextField', () => {
+  let mockGetMapping: Mock;
+  let mockClient: Client;
+
+  beforeEach(() => {
+    mockGetMapping = vi.fn();
+    mockClient = {
+      indices: {
+        getMapping: mockGetMapping,
+      },
+    } as unknown as Client;
+
+    elasticsearch.setClient(mockClient);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    elasticsearch.setClient(undefined);
+  });
+
+  it('should return true when semantic_text mapping exists', async () => {
+    mockGetMapping.mockResolvedValue({
+      'test-index': {
+        mappings: {
+          properties: {
+            semantic_text: { type: 'semantic_text' },
+          },
+        },
+      },
+    });
+
+    await expect(elasticsearch.indexHasSemanticTextField('test-index')).resolves.toBe(true);
+  });
+
+  it('should return false when semantic_text mapping does not exist', async () => {
+    mockGetMapping.mockResolvedValue({
+      'test-index': {
+        mappings: {
+          properties: {
+            content: { type: 'text' },
+          },
+        },
+      },
+    });
+
+    await expect(elasticsearch.indexHasSemanticTextField('test-index')).resolves.toBe(false);
+  });
+
+  it('should return false when semantic_text exists with wrong type', async () => {
+    mockGetMapping.mockResolvedValue({
+      'test-index': {
+        mappings: {
+          properties: {
+            semantic_text: { type: 'text' },
+          },
+        },
+      },
+    });
+
+    await expect(elasticsearch.indexHasSemanticTextField('test-index')).resolves.toBe(false);
+  });
+
+  it('should throw a friendly error when index does not exist', async () => {
+    const error = Object.assign(new Error('Not Found'), { meta: { statusCode: 404 } });
+    mockGetMapping.mockRejectedValue(error);
+
+    await expect(elasticsearch.indexHasSemanticTextField('missing-index')).rejects.toThrow(
+      'Index "missing-index" does not exist'
+    );
   });
 });

@@ -1,25 +1,30 @@
 import { setup } from '../../src/commands/setup_command';
 import * as gitHelper from '../../src/utils/git_helper';
-import { appConfig } from '../../src/config';
 import path from 'path';
-import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { withTestEnv } from './utils/test_env';
 
 vi.mock('../../src/utils/git_helper');
-vi.mock('../../src/config');
 
 const mockedGitHelper = vi.mocked(gitHelper);
-const mockedAppConfig = vi.mocked(appConfig);
 
 describe('setup_command', () => {
   const originalCwd = process.cwd();
   const testReposDir = path.join(originalCwd, '.repos');
+  const savedGithubToken = process.env.GITHUB_TOKEN;
 
   beforeEach(() => {
-    // Reset process.exitCode to prevent leakage between tests
     process.exitCode = 0;
-
     vi.clearAllMocks();
-    mockedAppConfig.githubToken = undefined;
+    delete process.env.GITHUB_TOKEN;
+  });
+
+  afterEach(() => {
+    if (savedGithubToken === undefined) {
+      delete process.env.GITHUB_TOKEN;
+    } else {
+      process.env.GITHUB_TOKEN = savedGithubToken;
+    }
   });
 
   describe('WHEN setup succeeds', () => {
@@ -27,7 +32,7 @@ describe('setup_command', () => {
       const repoUrl = 'https://github.com/elastic/kibana.git';
       mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
 
-      await setup(repoUrl, {});
+      await setup(repoUrl);
 
       expect(mockedGitHelper.cloneOrPullRepo).toHaveBeenCalledWith(
         repoUrl,
@@ -36,33 +41,35 @@ describe('setup_command', () => {
       );
     });
 
-    describe('AND token is provided', () => {
-      it('SHOULD use provided token', async () => {
+    describe('AND github token is provided via CLI options', () => {
+      it('SHOULD use provided github token', async () => {
         const repoUrl = 'https://github.com/elastic/kibana.git';
-        const token = 'ghp_test_token';
         mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
 
-        await setup(repoUrl, { token });
-
-        expect(mockedGitHelper.cloneOrPullRepo).toHaveBeenCalledWith(repoUrl, path.join(testReposDir, 'kibana'), token);
-      });
-    });
-
-    describe('AND no token is provided', () => {
-      it('SHOULD use appConfig token', async () => {
-        const repoUrl = 'https://github.com/elastic/kibana.git';
-        const configToken = 'ghp_config_token';
-        mockedAppConfig.githubToken = configToken;
-        mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
-
-        await setup(repoUrl, {});
+        await setup(repoUrl, { githubToken: 'ghp_cli_token' });
 
         expect(mockedGitHelper.cloneOrPullRepo).toHaveBeenCalledWith(
           repoUrl,
           path.join(testReposDir, 'kibana'),
-          configToken
+          'ghp_cli_token'
         );
       });
+    });
+
+    describe('AND no token is provided', () => {
+      it('SHOULD use appConfig token', () =>
+        withTestEnv({ GITHUB_TOKEN: 'ghp_config_token' }, async () => {
+          const repoUrl = 'https://github.com/elastic/kibana.git';
+          mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
+
+          await setup(repoUrl);
+
+          expect(mockedGitHelper.cloneOrPullRepo).toHaveBeenCalledWith(
+            repoUrl,
+            path.join(testReposDir, 'kibana'),
+            'ghp_config_token'
+          );
+        }));
     });
   });
 
@@ -72,7 +79,7 @@ describe('setup_command', () => {
       const error = new Error('Clone failed: authentication error');
       mockedGitHelper.cloneOrPullRepo.mockRejectedValue(error);
 
-      await expect(setup(repoUrl, {})).rejects.toThrow('Clone failed: authentication error');
+      await expect(setup(repoUrl)).rejects.toThrow('Clone failed: authentication error');
     });
 
     describe('AND error is a network timeout', () => {
@@ -81,7 +88,7 @@ describe('setup_command', () => {
         const error = new Error('Network timeout');
         mockedGitHelper.cloneOrPullRepo.mockRejectedValue(error);
 
-        await expect(setup(repoUrl, {})).rejects.toThrow('Network timeout');
+        await expect(setup(repoUrl)).rejects.toThrow('Network timeout');
       });
     });
   });
@@ -92,7 +99,7 @@ describe('setup_command', () => {
         const invalidUrl = 'https://github.com/';
         mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
 
-        await expect(setup(invalidUrl, {})).rejects.toThrow('Could not determine repository name from URL.');
+        await expect(setup(invalidUrl)).rejects.toThrow('Could not determine repository name from URL.');
 
         expect(mockedGitHelper.cloneOrPullRepo).not.toHaveBeenCalled();
       });
@@ -102,7 +109,7 @@ describe('setup_command', () => {
       it('SHOULD throw error', async () => {
         mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
 
-        await expect(setup('', {})).rejects.toThrow('Could not determine repository name from URL.');
+        await expect(setup('')).rejects.toThrow('Could not determine repository name from URL.');
 
         expect(mockedGitHelper.cloneOrPullRepo).not.toHaveBeenCalled();
       });
@@ -114,7 +121,7 @@ describe('setup_command', () => {
       const repoUrl = 'https://github.com/elastic/kibana.git';
       mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
 
-      await setup(repoUrl, {});
+      await setup(repoUrl);
 
       expect(mockedGitHelper.cloneOrPullRepo).toHaveBeenCalledWith(
         repoUrl,
@@ -129,7 +136,7 @@ describe('setup_command', () => {
       const repoUrl = 'https://github.com/elastic/kibana';
       mockedGitHelper.cloneOrPullRepo.mockResolvedValue(undefined);
 
-      await setup(repoUrl, {});
+      await setup(repoUrl);
 
       expect(mockedGitHelper.cloneOrPullRepo).toHaveBeenCalledWith(
         repoUrl,

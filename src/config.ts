@@ -1,12 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import os from 'os';
 import fs from 'fs';
-
-// Don't override existing environment variables (important for tests)
-// In test mode, try to load .env.test (if it exists), otherwise skip .env to avoid interference
-const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
-dotenv.config({ path: envFile, override: false, quiet: true });
 
 // Helper to find the project root by looking for package.json
 function findProjectRoot(startPath: string): string {
@@ -22,53 +16,217 @@ function findProjectRoot(startPath: string): string {
 
 const projectRoot = findProjectRoot(__dirname);
 
+/**
+ * Parses an environment variable into a non-negative integer.
+ *
+ * @param envVarName The name of the environment variable.
+ * @param fallback The default value if the environment variable is not set.
+ * @returns The parsed non-negative integer.
+ */
+function parseEnvNonNegativeInt(envVarName: string, fallback: number): number {
+  const value = process.env[envVarName];
+  if (value === undefined || value.trim() === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Invalid configuration: ${envVarName} must be a non-negative integer, got "${value}"`);
+  }
+  return parsed;
+}
+
+/**
+ * Parses an environment variable into a positive integer.
+ *
+ * @param envVarName The name of the environment variable.
+ * @param fallback The default value if the environment variable is not set.
+ * @returns The parsed positive integer.
+ */
+function parseEnvPositiveInt(envVarName: string, fallback: number): number {
+  const value = process.env[envVarName];
+  if (value === undefined || value.trim() === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid configuration: ${envVarName} must be a positive integer, got "${value}"`);
+  }
+  return parsed;
+}
+
+/**
+ * Parses an environment variable into a boolean.
+ *
+ * @param envVarName The name of the environment variable.
+ * @param fallback The default value if the environment variable is not set.
+ * @returns The parsed boolean.
+ */
+function parseEnvBoolean(envVarName: string, fallback: boolean): boolean {
+  const value = process.env[envVarName];
+  if (value === undefined || value.trim() === '') return fallback;
+  const lower = value.trim().toLowerCase();
+  if (lower === 'true' || lower === '1') return true;
+  if (lower === 'false' || lower === '0') return false;
+  throw new Error(`Invalid configuration: ${envVarName} must be a boolean (true/false/1/0), got "${value}"`);
+}
+
+// Don't override existing environment variables (important for tests).
+// In test mode, load .env.test instead of .env. If the file doesn't exist,
+// dotenv silently skips it (quiet: true).
+const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
+dotenv.config({ path: path.join(projectRoot, envFile), override: false, quiet: true });
+
 export const elasticsearchConfig = {
-  endpoint: process.env.ELASTICSEARCH_ENDPOINT || process.env.ELASTICSEARCH_HOST,
-  cloudId: process.env.ELASTICSEARCH_CLOUD_ID || undefined,
-  username: process.env.ELASTICSEARCH_USER || process.env.ELASTICSEARCH_USERNAME,
-  password: process.env.ELASTICSEARCH_PASSWORD,
-  apiKey: process.env.ELASTICSEARCH_API_KEY || undefined,
-  inferenceId: process.env.ELASTICSEARCH_INFERENCE_ID || process.env.ELASTICSEARCH_MODEL || '.elser-2-elasticsearch',
-  index: process.env.ELASTICSEARCH_INDEX || 'code-chunks',
+  get endpoint() {
+    return process.env.ELASTICSEARCH_ENDPOINT;
+  },
+  get cloudId() {
+    return process.env.ELASTICSEARCH_CLOUD_ID || undefined;
+  },
+  get username() {
+    return process.env.ELASTICSEARCH_USERNAME;
+  },
+  get password() {
+    return process.env.ELASTICSEARCH_PASSWORD;
+  },
+  get apiKey() {
+    return process.env.ELASTICSEARCH_API_KEY || undefined;
+  },
+  get inferenceId() {
+    return process.env.SCS_IDXR_ELASTICSEARCH_INFERENCE_ID || undefined;
+  },
+  get requestTimeout() {
+    return parseEnvPositiveInt('SCS_IDXR_ELASTICSEARCH_REQUEST_TIMEOUT', 90000);
+  },
+  get disableSemanticText() {
+    return parseEnvBoolean('SCS_IDXR_DISABLE_SEMANTIC_TEXT', false);
+  },
 };
 
 export const otelConfig = {
-  enabled: process.env.OTEL_LOGGING_ENABLED === 'true',
-  serviceName: process.env.OTEL_SERVICE_NAME || 'semantic-code-search-indexer',
-  endpoint:
-    process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
-  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS || '',
-  metricsEnabled:
-    process.env.OTEL_METRICS_ENABLED === 'true' ||
-    (process.env.OTEL_METRICS_ENABLED === undefined && process.env.OTEL_LOGGING_ENABLED === 'true'),
-  metricsEndpoint:
-    process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT ||
-    process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
-    'http://localhost:4318',
-  metricExportIntervalMs: parseInt(process.env.OTEL_METRIC_EXPORT_INTERVAL_MILLIS || '60000', 10),
+  get enabled() {
+    return parseEnvBoolean('SCS_IDXR_OTEL_LOGGING_ENABLED', false);
+  },
+  get serviceName() {
+    return process.env.OTEL_SERVICE_NAME || 'semantic-code-search-indexer';
+  },
+  get endpoint() {
+    return (
+      process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318'
+    );
+  },
+  get headers() {
+    return process.env.OTEL_EXPORTER_OTLP_HEADERS || '';
+  },
+  get metricsEnabled() {
+    const explicit = process.env.SCS_IDXR_OTEL_METRICS_ENABLED;
+    if (explicit !== undefined && explicit.trim() !== '') {
+      return parseEnvBoolean('SCS_IDXR_OTEL_METRICS_ENABLED', false);
+    }
+    return this.enabled; // Fallback to logging enabled status
+  },
+  get metricsEndpoint() {
+    return (
+      process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT ||
+      process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
+      'http://localhost:4318'
+    );
+  },
+  get metricExportIntervalMs() {
+    return parseEnvPositiveInt('SCS_IDXR_OTEL_METRIC_EXPORT_INTERVAL_MILLIS', 60000);
+  },
+  get logLevel() {
+    return process.env.OTEL_LOG_LEVEL;
+  },
+  get resourceAttributes() {
+    return process.env.OTEL_RESOURCE_ATTRIBUTES;
+  },
 };
 
 export const indexingConfig = {
-  batchSize: parseInt(process.env.BATCH_SIZE || '500', 10),
-  maxQueueSize: parseInt(process.env.MAX_QUEUE_SIZE || '1000', 10),
-  cpuCores: parseInt(process.env.CPU_CORES || `${Math.max(1, Math.floor(os.cpus().length / 2))}`, 10),
-  maxChunkSizeBytes: parseInt(process.env.MAX_CHUNK_SIZE_BYTES || '1000000', 10),
-  enableDenseVectors: process.env.ENABLE_DENSE_VECTORS === 'true',
-  defaultChunkLines: parseInt(process.env.DEFAULT_CHUNK_LINES || '15', 10),
-  chunkOverlapLines: parseInt(process.env.CHUNK_OVERLAP_LINES || '3', 10),
-  markdownChunkDelimiter: process.env.MARKDOWN_CHUNK_DELIMITER || '\\n\\s*\\n',
-  // Batch size for PIT pagination in deleteDocumentsByFilePaths. Larger values reduce round trips
-  // but can increase per-request payload sizes.
-  deleteDocumentsPageSize: parseInt(process.env.DELETE_DOCUMENTS_PAGE_SIZE || '500', 10),
-  // Incremental parsing worker pool size. Reuses worker threads to reduce startup/teardown overhead.
-  // This is clamped to CPU_CORES at runtime.
-  producerWorkerPoolSize: parseInt(
-    process.env.PRODUCER_WORKER_POOL_SIZE || `${Math.max(1, Math.floor(os.cpus().length / 2))}`,
-    10
-  ),
+  get maxChunkSizeBytes() {
+    return parseEnvPositiveInt('SCS_IDXR_MAX_CHUNK_SIZE_BYTES', 1000000);
+  },
+  set maxChunkSizeBytes(v: number) {
+    process.env.SCS_IDXR_MAX_CHUNK_SIZE_BYTES = v.toString();
+  },
+
+  get enableDenseVectors() {
+    return parseEnvBoolean('SCS_IDXR_ENABLE_DENSE_VECTORS', false);
+  },
+  set enableDenseVectors(v: boolean) {
+    process.env.SCS_IDXR_ENABLE_DENSE_VECTORS = v ? 'true' : 'false';
+  },
+
+  get defaultChunkLines() {
+    return parseEnvPositiveInt('SCS_IDXR_DEFAULT_CHUNK_LINES', 15);
+  },
+  set defaultChunkLines(v: number) {
+    process.env.SCS_IDXR_DEFAULT_CHUNK_LINES = v.toString();
+  },
+
+  get chunkOverlapLines() {
+    return parseEnvNonNegativeInt('SCS_IDXR_CHUNK_OVERLAP_LINES', 3);
+  },
+  set chunkOverlapLines(v: number) {
+    process.env.SCS_IDXR_CHUNK_OVERLAP_LINES = v.toString();
+  },
+
+  get markdownChunkDelimiter() {
+    return process.env.SCS_IDXR_MARKDOWN_CHUNK_DELIMITER || '\\n\\s*\\n';
+  },
+  set markdownChunkDelimiter(v: string) {
+    process.env.SCS_IDXR_MARKDOWN_CHUNK_DELIMITER = v;
+  },
+
+  get testThrowOnFilePath() {
+    return process.env.SCS_IDXR_TEST_INDEXING_THROW_ON_FILEPATH;
+  },
+  set testThrowOnFilePath(v: string | undefined) {
+    if (v === undefined) delete process.env.SCS_IDXR_TEST_INDEXING_THROW_ON_FILEPATH;
+    else process.env.SCS_IDXR_TEST_INDEXING_THROW_ON_FILEPATH = v;
+  },
+
+  get testDelayMs() {
+    return parseEnvNonNegativeInt('SCS_IDXR_TEST_INDEXING_DELAY_MS', 0);
+  },
+  set testDelayMs(v: number) {
+    process.env.SCS_IDXR_TEST_INDEXING_DELAY_MS = v.toString();
+  },
 };
 
 export const appConfig = {
-  queueBaseDir: path.resolve(projectRoot, process.env.QUEUE_BASE_DIR || '.queues'),
-  githubToken: process.env.GITHUB_TOKEN,
+  get queueBaseDir() {
+    return path.resolve(projectRoot, process.env.SCS_IDXR_QUEUE_BASE_DIR || '.queues');
+  },
+  set queueBaseDir(v: string) {
+    process.env.SCS_IDXR_QUEUE_BASE_DIR = v;
+  },
+
+  get githubToken() {
+    return process.env.GITHUB_TOKEN;
+  },
+  set githubToken(v: string | undefined) {
+    if (v === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = v;
+  },
+
+  get languages() {
+    return process.env.SCS_IDXR_LANGUAGES;
+  },
+  set languages(v: string | undefined) {
+    if (v === undefined) delete process.env.SCS_IDXR_LANGUAGES;
+    else process.env.SCS_IDXR_LANGUAGES = v;
+  },
+
+  get nodeEnv() {
+    return process.env.NODE_ENV;
+  },
+  set nodeEnv(v: string | undefined) {
+    if (v === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = v;
+  },
+
+  get forceLogging() {
+    return parseEnvBoolean('SCS_IDXR_FORCE_LOGGING', false);
+  },
+  set forceLogging(v: boolean) {
+    process.env.SCS_IDXR_FORCE_LOGGING = v ? 'true' : 'false';
+  },
 };

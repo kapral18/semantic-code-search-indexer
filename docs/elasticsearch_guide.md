@@ -10,7 +10,7 @@ The `code-indexer` tool uses the official Elasticsearch Node.js client. Connecti
 | :--- | :--- |
 | `ELASTICSEARCH_ENDPOINT` | The HTTP endpoint of your Elasticsearch cluster. |
 | `ELASTICSEARCH_CLOUD_ID` | The Cloud ID for an Elastic Cloud deployment. |
-| `ELASTICSEARCH_USER` | The username for authentication. |
+| `ELASTICSEARCH_USERNAME` | The username for authentication. |
 | `ELASTICSEARCH_PASSWORD` | The password for authentication. |
 | `ELASTICSEARCH_API_KEY` | An API key for authentication. |
 
@@ -26,7 +26,7 @@ const client = new Client({
     id: process.env.ELASTICSEARCH_CLOUD_ID,
   },
   auth: {
-    username: process.env.ELASTICSEARCH_USER,
+    username: process.env.ELASTICSEARCH_USERNAME,
     password: process.env.ELASTICSEARCH_PASSWORD,
   },
   // Or, for API key authentication:
@@ -38,7 +38,7 @@ const client = new Client({
 
 ## Index Schema
 
-The `code-indexer` creates multiple Elasticsearch indices, derived from the base index name specified by `ELASTICSEARCH_INDEX` (defaulting to `code-chunks`):
+The `code-indexer` creates multiple Elasticsearch indices, derived from the base index name you pass via the CLI (`repo[:index]`):
 
 - `<index>` (e.g. `code-chunks`): primary chunk index (semantic search + metadata)
 - `<index>_settings` (e.g. `code-chunks_settings`): small settings/state index (e.g. last indexed commit per branch)
@@ -46,7 +46,7 @@ The `code-indexer` creates multiple Elasticsearch indices, derived from the base
 
 ### Index Mapping
 
-Here is the mapping for the `code-chunks` index:
+Here is the mapping for the primary `<index>` (e.g. `code-chunks`):
 
 ```json
 {
@@ -148,7 +148,7 @@ To perform a semantic search, use a `semantic` query against the `semantic_text`
 ```javascript
 async function searchCode(query) {
   const response = await client.search({
-    index: 'code-chunks', // Or process.env.ELASTICSEARCH_INDEX
+    index: '<index>',
     query: {
       semantic: {
         field: 'semantic_text',
@@ -179,6 +179,17 @@ The indexer stores content-deduplicated chunk documents in `<index>` and per-fil
 
 ### Important Considerations
 
-*   **ELSER Model / inference:** The `semantic_text` field is configured with an `inference_id`. Configure this via `ELASTICSEARCH_INFERENCE_ID` (or legacy `ELASTICSEARCH_MODEL`).
-*   **Index Name:** Always use the `ELASTICSEARCH_INDEX` environment variable to refer to the index name to avoid mismatches.
+*   **ELSER Model / inference:** The `semantic_text` field is configured with an `inference_id`. Configure this via `SCS_IDXR_ELASTICSEARCH_INFERENCE_ID`.
+*   **Index Name:** Always pass an explicit index name via the CLI (`repo[:index]`) and use that same base index name when querying (and when configuring any MCP server).
 *   **Data Freshness:** The index is updated by running the `code-indexer` tool. For the MCP server to have the latest data, the index needs to be kept up-to-date by running the indexer regularly.
+
+#### Choosing an inference endpoint (`SCS_IDXR_ELASTICSEARCH_INFERENCE_ID`): EIS vs ML nodes
+
+`semantic_text` relies on an inference endpoint (`inference_id`) at ingest time. In practice, you’ll usually pick between these defaults:
+
+- **`.elser-2-elasticsearch` (ML nodes)**: inference runs on your Elasticsearch deployment’s ML nodes. This is typically the best default for local/dev and for deployments where you manage ML capacity yourself.
+- **`.elser-2-elastic` (EIS)**: inference runs on the Elastic Inference Service (managed). This does **not** consume your cluster’s ML resources and is generally the easiest way to get higher ingest throughput, but it may not be available for every deployment type and is subject to service rate limits.
+
+If you’re unsure which endpoints your cluster has, list them with `GET /_inference` and pick an `inference_id` that exists on your deployment.
+
+This repo does **not** select a default inference endpoint. If `semantic_text` is enabled (default), you must set `SCS_IDXR_ELASTICSEARCH_INFERENCE_ID`.
